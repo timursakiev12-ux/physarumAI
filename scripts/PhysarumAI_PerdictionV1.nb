@@ -1,0 +1,1185 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.2' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[     47115,       1177]
+NotebookOptionsPosition[     46523,       1159]
+NotebookOutlinePosition[     46927,       1175]
+CellTagsIndexPosition[     46884,       1172]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+    RowBox[{
+    "===", "===", "===", "===", "===", "===", "===", "===", "===", "===", "===",
+      "===", "===", "===", 
+     RowBox[{"==", "PhysarumAI"}]}], "\[LongDash]", 
+    RowBox[{
+     RowBox[{
+      RowBox[{
+      "12", "\[Times]", "12", " ", "cm", " ", "Petri", " ", "dish", " ", "UI",
+        " ", 
+       RowBox[{"(", 
+        RowBox[{"16", "\[Times]", "16", " ", "grid"}], ")"}]}], "-", 
+      RowBox[{
+      "Strict", " ", "12", " ", "cm", "\[Times]", "12", " ", "cm", " ", 
+       "area"}], "-", 
+      RowBox[{
+      "Points", " ", "placed", " ", "on", " ", "centers", " ", "of", " ", 
+       "16", "\[Times]", "16", " ", "cells"}], "-", 
+      RowBox[{"Click", " ", "to", " ", "place", " ", "points", " ", 
+       RowBox[{"(", 
+        RowBox[{"snapped", " ", "to", " ", "cell", " ", "centers"}], ")"}]}], 
+      "-", "Alt", "+", 
+      RowBox[{
+      "click", " ", "near", " ", "a", " ", "point", " ", "to", " ", "delete", 
+       " ", "nearest"}], "-", 
+      RowBox[{"Uses", " ", 
+       RowBox[{"trained", ".", "wlnet"}], " ", "to", " ", "predict", " ", "P", 
+       RowBox[{"(", "edge", ")"}], " ", "for", " ", "each", " ", "pair"}]}], "===",
+      "===", "===", "===", "===", "===", "===", "===", "===", "===", "===", "===",
+      "===", "===", "=="}]}], "*)"}], 
+  RowBox[{
+   RowBox[{
+    RowBox[{"ClearAll", "[", "\"\<Global`*\>\"", "]"}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"--", "1"}]}], ")"}], " ", "Load", " ", "trained", " ", 
+     RowBox[{
+      RowBox[{"net", "--"}], "--"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"netPath", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"NotebookDirectory", "[", "]"}], 
+        ",", "\"\<trainedNet4_flow_groupSplit.wlnet\>\""}], "}"}], "]"}]}], 
+    ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"If", "[", 
+     RowBox[{
+      RowBox[{"!", 
+       RowBox[{"FileExistsQ", "[", "netPath", "]"}]}], ",", 
+      RowBox[{
+       RowBox[{"Print", "[", 
+        RowBox[{"\"\<ERROR: net file not found at: \>\"", ",", "netPath"}], 
+        "]"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"Print", "[", 
+        RowBox[{"\"\<Notebook dir: \>\"", ",", 
+         RowBox[{"NotebookDirectory", "[", "]"}]}], "]"}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"Print", "[", 
+        RowBox[{"\"\<wlnet files here: \>\"", ",", 
+         RowBox[{"FileNames", "[", 
+          RowBox[{"\"\<*.wlnet\>\"", ",", 
+           RowBox[{"NotebookDirectory", "[", "]"}]}], "]"}]}], "]"}], ";", 
+       "\[IndentingNewLine]", 
+       RowBox[{"Abort", "[", "]"}], ";"}]}], "]"}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"net", "=", 
+     RowBox[{"Import", "[", "netPath", "]"}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"Print", "[", 
+     RowBox[{"\"\<Loaded net from: \>\"", ",", "netPath"}], "]"}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"--", "2"}]}], ")"}], " ", "Geometry", " ", 
+     RowBox[{
+      RowBox[{"constants", "--"}], "--"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"dishCM", "=", "12.0"}], ";"}], "        ", 
+   RowBox[{"(*", 
+    RowBox[{"12", "\[Times]", "12", " ", "cm"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"nCells", "=", "16"}], ";"}], "          ", 
+   RowBox[{"(*", 
+    RowBox[{"16", "\[Times]", "16", " ", "grid"}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{"cellCM", "=", 
+     RowBox[{"dishCM", "/", "nCells"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Convert", " ", "between", " ", "coordinate", " ", "systems"}], 
+    "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"cmTo01", "[", "p_", "]"}], ":=", 
+     RowBox[{"N", "[", 
+      RowBox[{"p", "/", "dishCM"}], "]"}]}], ";"}], "        ", 
+   RowBox[{"(*", 
+    RowBox[{"cm", "->", 
+     RowBox[{"[", 
+      RowBox[{"0", ",", "1"}], "]"}]}], "*)"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"cellCenterCM", "[", 
+      RowBox[{"{", 
+       RowBox[{"ix_", ",", "iy_"}], "}"}], "]"}], ":=", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"(", 
+         RowBox[{"ix", "-", "0.5"}], ")"}], "*", "cellCM"}], ",", 
+       RowBox[{
+        RowBox[{"(", 
+         RowBox[{"iy", "-", "0.5"}], ")"}], "*", "cellCM"}]}], "}"}]}], ";"}],
+    "  ", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{"1", ".."}], "16"}], "*)"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Snap", " ", "click", " ", 
+     RowBox[{"(", "cm", ")"}], " ", "to", " ", "nearest", " ", "cell", " ", 
+     "center", " ", 
+     RowBox[{"(", "cm", ")"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"snapToCellCenterCM", "[", "pCM_", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"ix", ",", "iy"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"ix", "=", 
+         RowBox[{"Clip", "[", 
+          RowBox[{
+           RowBox[{"Round", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"pCM", "[", 
+               RowBox[{"[", "1", "]"}], "]"}], "/", "cellCM"}], "+", "0.5"}], 
+            "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "nCells"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"iy", "=", 
+         RowBox[{"Clip", "[", 
+          RowBox[{
+           RowBox[{"Round", "[", 
+            RowBox[{
+             RowBox[{
+              RowBox[{"pCM", "[", 
+               RowBox[{"[", "2", "]"}], "]"}], "/", "cellCM"}], "+", "0.5"}], 
+            "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"1", ",", "nCells"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"cellCenterCM", "[", 
+         RowBox[{"{", 
+          RowBox[{"ix", ",", "iy"}], "}"}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"helper", ":", 
+     RowBox[{"nearest", " ", "point", " ", "index"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"nearestIndex", "[", 
+      RowBox[{"p_", ",", "list_"}], "]"}], ":=", 
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{"list", "===", 
+        RowBox[{"{", "}"}]}], ",", 
+       RowBox[{"Missing", "[", "\"\<none\>\"", "]"}], ",", 
+       RowBox[{"First", "@", 
+        RowBox[{"Ordering", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{
+            RowBox[{"EuclideanDistance", "[", 
+             RowBox[{"p", ",", "#"}], "]"}], "&"}], "/@", "list"}], ",", 
+          "1"}], "]"}]}]}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"--", "3"}]}], ")"}], " ", "Model", " ", "feature", " ", 
+     RowBox[{
+      RowBox[{"functions", "--"}], "--"}]}], "*)"}], "\[IndentingNewLine]", 
+   "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Distance", " ", "in", " ", "normalized", " ", 
+     RowBox[{"space", "[", 
+      RowBox[{
+       RowBox[{"0", ".."}], "1"}], "]"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"dist01", "[", 
+      RowBox[{"ptsCM_", ",", "i_", ",", "j_"}], "]"}], ":=", 
+     RowBox[{"EuclideanDistance", "[", 
+      RowBox[{
+       RowBox[{"cmTo01", "@", 
+        RowBox[{"ptsCM", "[", 
+         RowBox[{"[", "i", "]"}], "]"}]}], ",", 
+       RowBox[{"cmTo01", "@", 
+        RowBox[{"ptsCM", "[", 
+         RowBox[{"[", "j", "]"}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Hub", " ", "definition", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"same", " ", "as", " ", "before"}], ",", 
+       RowBox[{"based", " ", "on", " ", "mean", " ", "distance"}]}], ")"}]}], 
+    "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"hubStrengthFunction01", "[", "ptsCM_", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"pts01", "=", 
+          RowBox[{"cmTo01", "/@", "ptsCM"}]}], ",", "n", ",", 
+         RowBox[{"eps", "=", 
+          RowBox[{"10", "^", 
+           RowBox[{"-", "6"}]}]}], ",", "dmean"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"n", "=", 
+         RowBox[{"Length", "[", "pts01", "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"dmean", "=", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"Mean", "[", 
+            RowBox[{"Delete", "[", 
+             RowBox[{
+              RowBox[{
+               RowBox[{
+                RowBox[{"EuclideanDistance", "[", 
+                 RowBox[{
+                  RowBox[{"pts01", "[", 
+                   RowBox[{"[", "i", "]"}], "]"}], ",", "#"}], "]"}], "&"}], "/@",
+                "pts01"}], ",", "i"}], "]"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"i", ",", "n"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"1", "/", 
+         RowBox[{"(", 
+          RowBox[{"dmean", "+", "eps"}], ")"}]}]}]}], "]"}]}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"flowCompetitionFromHubs", "[", 
+      RowBox[{"hubs_", ",", "i_", ",", "j_"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", "altHubSum", "}"}], ",", 
+       RowBox[{
+        RowBox[{"altHubSum", "=", 
+         RowBox[{
+          RowBox[{"Total", "[", "hubs", "]"}], "-", 
+          RowBox[{"hubs", "[", 
+           RowBox[{"[", "i", "]"}], "]"}], "-", 
+          RowBox[{"hubs", "[", 
+           RowBox[{"[", "j", "]"}], "]"}]}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"N", "[", 
+         RowBox[{"altHubSum", "/", 
+          RowBox[{"(", 
+           RowBox[{"altHubSum", "+", 
+            RowBox[{"hubs", "[", 
+             RowBox[{"[", "i", "]"}], "]"}], "+", 
+            RowBox[{"hubs", "[", 
+             RowBox[{"[", "j", "]"}], "]"}], "+", 
+            RowBox[{"10", "^", 
+             RowBox[{"-", "12"}]}]}], ")"}]}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Predict", " ", "probability", " ", "matrix"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"predictProbMatrix", "[", "ptsCM_", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"n", "=", 
+          RowBox[{"Length", "[", "ptsCM", "]"}]}], ",", "hubs", ",", "pm", ",",
+          "x", ",", "p"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"hubs", "=", 
+         RowBox[{"hubStrengthFunction01", "[", "ptsCM", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"pm", "=", 
+         RowBox[{"ConstantArray", "[", 
+          RowBox[{"0.", ",", 
+           RowBox[{"{", 
+            RowBox[{"n", ",", "n"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Do", "[", 
+         RowBox[{
+          RowBox[{"If", "[", 
+           RowBox[{
+            RowBox[{"i", "<", "j"}], ",", 
+            RowBox[{
+             RowBox[{"x", "=", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"dist01", "[", 
+                 RowBox[{"ptsCM", ",", "i", ",", "j"}], "]"}], ",", 
+                RowBox[{"Min", "[", 
+                 RowBox[{
+                  RowBox[{"hubs", "[", 
+                   RowBox[{"[", "i", "]"}], "]"}], ",", 
+                  RowBox[{"hubs", "[", 
+                   RowBox[{"[", "j", "]"}], "]"}]}], "]"}], ",", 
+                RowBox[{"Max", "[", 
+                 RowBox[{
+                  RowBox[{"hubs", "[", 
+                   RowBox[{"[", "i", "]"}], "]"}], ",", 
+                  RowBox[{"hubs", "[", 
+                   RowBox[{"[", "j", "]"}], "]"}]}], "]"}], ",", 
+                RowBox[{"flowCompetitionFromHubs", "[", 
+                 RowBox[{"hubs", ",", "i", ",", "j"}], "]"}]}], "}"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"p", "=", 
+              RowBox[{"net", "[", "x", "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"(*", 
+              RowBox[{"robust", " ", "output", " ", "handling"}], "*)"}], 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"AssociationQ", "[", "p", "]"}], ",", 
+               RowBox[{"p", "=", 
+                RowBox[{"Lookup", "[", 
+                 RowBox[{"p", ",", "\"\<Output\>\"", ",", 
+                  RowBox[{"Lookup", "[", 
+                   RowBox[{"p", ",", "\"\<Probability\>\"", ",", 
+                    RowBox[{"Lookup", "[", 
+                    RowBox[{"p", ",", "\"\<p\>\"", ",", 
+                    RowBox[{"Missing", "[", "]"}]}], "]"}]}], "]"}]}], 
+                 "]"}]}]}], "]"}], ";", "\[IndentingNewLine]", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"ListQ", "[", "p", "]"}], ",", 
+               RowBox[{"p", "=", 
+                RowBox[{"First", "[", "p", "]"}]}]}], "]"}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"!", 
+                RowBox[{"NumericQ", "[", "p", "]"}]}], ",", 
+               RowBox[{"p", "=", "0.0"}]}], "]"}], ";", "\[IndentingNewLine]", 
+             RowBox[{"p", "=", 
+              RowBox[{"Clip", "[", 
+               RowBox[{
+                RowBox[{"N", "[", "p", "]"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{"0", ",", "1"}], "}"}]}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"pm", "[", 
+               RowBox[{"[", 
+                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", "p"}], ";", 
+             RowBox[{
+              RowBox[{"pm", "[", 
+               RowBox[{"[", 
+                RowBox[{"j", ",", "i"}], "]"}], "]"}], "=", "p"}], ";"}]}], 
+           "]"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"i", ",", "1", ",", "n"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"j", ",", "1", ",", "n"}], "}"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"<|", 
+         RowBox[{
+          RowBox[{"\"\<probMatrix\>\"", "->", "pm"}], ",", 
+          RowBox[{"\"\<hubs\>\"", "->", "hubs"}]}], "|>"}]}]}], "]"}]}], 
+    ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Edge", " ", "style", " ", "mapping"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"edgeStyleFromP", "[", 
+      RowBox[{
+      "p_", ",", "pMaxThick_", ",", "thicknessMax_", ",", "opacityMax_"}], 
+      "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"t", ",", "op"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"t", "=", 
+         RowBox[{"thicknessMax", "*", 
+          RowBox[{"Clip", "[", 
+           RowBox[{
+            RowBox[{"p", "/", "pMaxThick"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"0", ",", "1"}], "}"}]}], "]"}]}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"op", "=", 
+         RowBox[{"opacityMax", "*", 
+          RowBox[{"Clip", "[", 
+           RowBox[{
+            RowBox[{"p", "/", "pMaxThick"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"0", ",", "1"}], "}"}]}], "]"}]}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"AbsoluteThickness", "[", 
+           RowBox[{"0.5", "+", 
+            RowBox[{"6", " ", "t"}]}], "]"}], ",", 
+          RowBox[{"Opacity", "[", 
+           RowBox[{"0.15", "+", 
+            RowBox[{"0.85", " ", "op"}]}], "]"}], ",", "Blue"}], "}"}]}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{"Build", " ", "graph", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"use", " ", "RULE", " ", "LISTS"}], ",", 
+       RowBox[{"not", " ", "Associations"}], "\[LongDash]", 
+       RowBox[{"for", " ", "compatibility"}]}], ")"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"makeGraph", "[", 
+      RowBox[{
+      "ptsCM_", ",", "pm_", ",", "thr_", ",", "pMaxThick_", ",", 
+       "thicknessMax_", ",", "opacityMax_"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"n", "=", 
+          RowBox[{"Length", "[", "ptsCM", "]"}]}], ",", "edgeRules", ",", 
+         "edgeStyleRules", ",", "vertexLabelRules", ",", "coords01"}], "}"}], 
+       ",", 
+       RowBox[{
+        RowBox[{"coords01", "=", 
+         RowBox[{"cmTo01", "/@", "ptsCM"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"edgeRules", "=", 
+         RowBox[{
+          RowBox[{"Reap", "[", 
+           RowBox[{"Do", "[", 
+            RowBox[{
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"i", "<", "j"}], "&&", 
+                RowBox[{
+                 RowBox[{"pm", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i", ",", "j"}], "]"}], "]"}], ">=", "thr"}]}], ",", 
+               RowBox[{"Sow", "[", 
+                RowBox[{
+                 RowBox[{"UndirectedEdge", "[", 
+                  RowBox[{"i", ",", "j"}], "]"}], "->", 
+                 RowBox[{"pm", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i", ",", "j"}], "]"}], "]"}]}], "]"}]}], "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"i", ",", "1", ",", "n"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"j", ",", "1", ",", "n"}], "}"}]}], "]"}], "]"}], "[", 
+          RowBox[{"[", "2", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"edgeRules", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"edgeRules", "===", 
+            RowBox[{"{", "}"}]}], ",", 
+           RowBox[{"{", "}"}], ",", 
+           RowBox[{"First", "[", "edgeRules", "]"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"edgeStyleRules", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"edgeRules", "===", 
+            RowBox[{"{", "}"}]}], ",", 
+           RowBox[{"{", "}"}], ",", 
+           RowBox[{"Normal", "@", 
+            RowBox[{"Association", "@", 
+             RowBox[{"KeyValueMap", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"(", 
+                 RowBox[{"#1", "->", 
+                  RowBox[{"edgeStyleFromP", "[", 
+                   RowBox[{
+                   "#2", ",", "pMaxThick", ",", "thicknessMax", ",", 
+                    "opacityMax"}], "]"}]}], ")"}], "&"}], ",", 
+               RowBox[{"Association", "[", "edgeRules", "]"}]}], "]"}]}]}]}], 
+          "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"vertexLabelRules", "=", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"i", "->", 
+            RowBox[{"Placed", "[", 
+             RowBox[{
+              RowBox[{"Style", "[", 
+               RowBox[{"i", ",", "12", ",", "Black"}], "]"}], ",", "Center"}],
+              "]"}]}], ",", 
+           RowBox[{"{", 
+            RowBox[{"i", ",", "1", ",", "n"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Graph", "[", 
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{"edgeStyleRules", "/.", " ", 
+            RowBox[{
+             RowBox[{"(", 
+              RowBox[{"e_", "->", "s_"}], ")"}], ":>", "e"}]}], ")"}], ",", 
+          RowBox[{"VertexCoordinates", "->", 
+           RowBox[{"Thread", "[", 
+            RowBox[{
+             RowBox[{"Range", "[", "n", "]"}], "->", "coords01"}], "]"}]}], ",", 
+          RowBox[{"VertexLabels", "->", "vertexLabelRules"}], ",", 
+          RowBox[{"VertexSize", "->", "0.035"}], ",", 
+          RowBox[{"EdgeStyle", "->", "edgeStyleRules"}], ",", 
+          RowBox[{"PlotRange", "->", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{"0", ",", "1"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
+          RowBox[{"ImagePadding", "->", "15"}], ",", 
+          RowBox[{"ImageSize", "->", "520"}]}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"--", "4"}]}], ")"}], " ", "Drawing", " ", "the", " ", "16", "\[Times]",
+      "16", " ", "grid", " ", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{"in", " ", "normalized", " ", "coords"}], ")"}], "--"}], 
+      "--"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"gridLines01", "[", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"step", "=", 
+         RowBox[{"1.", "/", "nCells"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"GrayLevel", "[", "0.85", "]"}], ",", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"Line", "[", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"k", ",", "0"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"k", ",", "1"}], "}"}]}], "}"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"k", ",", "0", ",", "1", ",", "step"}], "}"}]}], "]"}], ",", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"Line", "[", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"0", ",", "k"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"1", ",", "k"}], "}"}]}], "}"}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"k", ",", "0", ",", "1", ",", "step"}], "}"}]}], "]"}]}], 
+        "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{
+      "Optional", " ", "cell", " ", "labels", " ", "like", " ", "A1"}], 
+      "..."}], "P16", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"can", " ", "be", " ", "heavy"}], ";", "toggle"}], ")"}]}], 
+    "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"cellLabel", "[", 
+      RowBox[{"i_", ",", "j_"}], "]"}], ":=", 
+     RowBox[{
+      RowBox[{"FromCharacterCode", "[", 
+       RowBox[{"64", "+", "i"}], "]"}], "<>", 
+      RowBox[{"ToString", "[", "j", "]"}]}]}], ";"}], " ", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{"A1", ".."}], "P16"}], "*)"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"cellLabels01", "[", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"step", "=", 
+         RowBox[{"1.", "/", "nCells"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"GrayLevel", "[", "0.55", "]"}], ",", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"Text", "[", 
+            RowBox[{
+             RowBox[{"Style", "[", 
+              RowBox[{
+               RowBox[{"cellLabel", "[", 
+                RowBox[{"i", ",", "j"}], "]"}], ",", "8"}], "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"(", 
+                 RowBox[{"i", "-", "0.5"}], ")"}], "*", "step"}], ",", 
+               RowBox[{
+                RowBox[{"(", 
+                 RowBox[{"j", "-", "0.5"}], ")"}], "*", "step"}]}], "}"}]}], 
+            "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"i", ",", "1", ",", "nCells"}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"j", ",", "1", ",", "nCells"}], "}"}]}], "]"}]}], "}"}]}],
+       "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"--", "5"}]}], ")"}], " ", 
+     RowBox[{
+      RowBox[{"UI", "--"}], "--"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{"DynamicModule", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"ptsCM", "=", 
+        RowBox[{"{", "}"}]}], ",", 
+       RowBox[{"(*", 
+        RowBox[{
+        "points", " ", "stored", " ", "in", " ", "cm", " ", "coords"}], 
+        "*)"}], 
+       RowBox[{"thr", "=", "0.35"}], ",", 
+       RowBox[{"pMaxThick", "=", "0.8"}], ",", 
+       RowBox[{"thicknessMax", "=", "1.0"}], ",", 
+       RowBox[{"opacityMax", "=", "1.0"}], ",", 
+       RowBox[{"showMatrix", "=", "False"}], ",", 
+       RowBox[{"showCellLabels", "=", "False"}]}], "}"}], ",", 
+     RowBox[{"Column", "[", 
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"Style", "[", 
+         RowBox[{"\"\<PhysarumAI: 12\[Times]12 cm dish (16\[Times]16 grid) \
+\[LongDash] click-to-place points\>\"", ",", "16", ",", "Bold"}], "]"}], ",", 
+        RowBox[{"Row", "[", 
+         RowBox[{"{", 
+          RowBox[{"\"\<Threshold (show p \[GreaterEqual] thr): \>\"", ",", 
+           RowBox[{"Slider", "[", 
+            RowBox[{
+             RowBox[{"Dynamic", "[", "thr", "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"0", ",", "1"}], "}"}]}], "]"}], ",", "\"\<  \>\"", ",", 
+           RowBox[{"Dynamic", "@", 
+            RowBox[{"NumberForm", "[", 
+             RowBox[{"thr", ",", 
+              RowBox[{"{", 
+               RowBox[{"2", ",", "2"}], "}"}]}], "]"}]}], ",", 
+           RowBox[{"Spacer", "[", "25", "]"}], ",", 
+           RowBox[{"Checkbox", "[", 
+            RowBox[{"Dynamic", "[", "showCellLabels", "]"}], "]"}], 
+           ",", "\"\< show cell labels (A1..P16)\>\""}], "}"}], "]"}], ",", 
+        RowBox[{"Row", "[", 
+         RowBox[{"{", 
+          RowBox[{"\"\<pMax for thickness/opacity mapping: \>\"", ",", 
+           RowBox[{"Slider", "[", 
+            RowBox[{
+             RowBox[{"Dynamic", "[", "pMaxThick", "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"0.05", ",", "1"}], "}"}]}], "]"}], ",", "\"\<  \>\"", ",", 
+           RowBox[{"Dynamic", "@", 
+            RowBox[{"NumberForm", "[", 
+             RowBox[{"pMaxThick", ",", 
+              RowBox[{"{", 
+               RowBox[{"2", ",", "2"}], "}"}]}], "]"}]}], ",", 
+           RowBox[{"Spacer", "[", "20", "]"}], 
+           ",", "\"\<Thickness scale: \>\"", ",", 
+           RowBox[{"Slider", "[", 
+            RowBox[{
+             RowBox[{"Dynamic", "[", "thicknessMax", "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"0.2", ",", "2"}], "}"}]}], "]"}], ",", "\"\<  \>\"", ",", 
+           RowBox[{"Dynamic", "@", 
+            RowBox[{"NumberForm", "[", 
+             RowBox[{"thicknessMax", ",", 
+              RowBox[{"{", 
+               RowBox[{"2", ",", "2"}], "}"}]}], "]"}]}], ",", 
+           RowBox[{"Spacer", "[", "20", "]"}], ",", "\"\<Opacity scale: \>\"",
+            ",", 
+           RowBox[{"Slider", "[", 
+            RowBox[{
+             RowBox[{"Dynamic", "[", "opacityMax", "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"0.2", ",", "1"}], "}"}]}], "]"}], ",", "\"\<  \>\"", ",", 
+           RowBox[{"Dynamic", "@", 
+            RowBox[{"NumberForm", "[", 
+             RowBox[{"opacityMax", ",", 
+              RowBox[{"{", 
+               RowBox[{"2", ",", "2"}], "}"}]}], "]"}]}]}], "}"}], "]"}], ",", 
+        RowBox[{"Row", "[", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"Button", "[", 
+            RowBox[{"\"\<Clear points\>\"", ",", 
+             RowBox[{"ptsCM", "=", 
+              RowBox[{"{", "}"}]}]}], "]"}], ",", 
+           RowBox[{"Spacer", "[", "10", "]"}], ",", 
+           RowBox[{"Button", "[", 
+            RowBox[{"\"\<Undo last\>\"", ",", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"Length", "[", "ptsCM", "]"}], ">", "0"}], ",", 
+               RowBox[{"ptsCM", "=", 
+                RowBox[{"Most", "[", "ptsCM", "]"}]}]}], "]"}]}], "]"}], ",", 
+           RowBox[{"Spacer", "[", "10", "]"}], ",", 
+           RowBox[{"Checkbox", "[", 
+            RowBox[{"Dynamic", "[", "showMatrix", "]"}], "]"}], 
+           ",", "\"\< show probability matrix\>\""}], "}"}], "]"}], ",", 
+        RowBox[{"Style", "[", 
+         RowBox[{"\"\<Click inside the dish to add a point (snaps to cell \
+center).  Alt+click near a point to delete it.\>\"", ",", "12", ",", 
+          RowBox[{"GrayLevel", "[", "0.35", "]"}]}], "]"}], ",", 
+        RowBox[{"Dynamic", "@", 
+         RowBox[{"Module", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"res", ",", "pm", ",", "hubs", ",", "g", ",", "pts01"}], 
+            "}"}], ",", 
+           RowBox[{
+            RowBox[{"pts01", "=", 
+             RowBox[{"cmTo01", "/@", "ptsCM"}]}], ";", "\[IndentingNewLine]", 
+            RowBox[{"res", "=", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"Length", "[", "ptsCM", "]"}], ">=", "2"}], ",", 
+               RowBox[{"predictProbMatrix", "[", "ptsCM", "]"}], ",", 
+               RowBox[{"<|", 
+                RowBox[{
+                 RowBox[{"\"\<probMatrix\>\"", "->", 
+                  RowBox[{"{", "}"}]}], ",", 
+                 RowBox[{"\"\<hubs\>\"", "->", 
+                  RowBox[{"{", "}"}]}]}], "|>"}]}], "]"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"pm", "=", 
+             RowBox[{"res", "[", "\"\<probMatrix\>\"", "]"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"hubs", "=", 
+             RowBox[{"res", "[", "\"\<hubs\>\"", "]"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"g", "=", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"Length", "[", "ptsCM", "]"}], ">=", "2"}], ",", 
+               RowBox[{"makeGraph", "[", 
+                RowBox[{
+                "ptsCM", ",", "pm", ",", "thr", ",", "pMaxThick", ",", 
+                 "thicknessMax", ",", "opacityMax"}], "]"}], ",", 
+               RowBox[{"Style", "[", 
+                
+                RowBox[{"\"\<Add at least 2 points to see predicted \
+edges.\>\"", ",", "12", ",", 
+                 RowBox[{"GrayLevel", "[", "0.4", "]"}]}], "]"}]}], "]"}]}], ";",
+             "\[IndentingNewLine]", 
+            RowBox[{"Row", "[", 
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"EventHandler", "[", 
+                RowBox[{
+                 RowBox[{"Graphics", "[", 
+                  RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"GrayLevel", "[", "0.97", "]"}], ",", 
+                    RowBox[{"Rectangle", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "0"}], "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "1"}], "}"}]}], "]"}], ",", 
+                    RowBox[{"gridLines01", "[", "]"}], ",", 
+                    RowBox[{"If", "[", 
+                    RowBox[{"showCellLabels", ",", 
+                    RowBox[{"cellLabels01", "[", "]"}], ",", 
+                    RowBox[{"{", "}"}]}], "]"}], ",", 
+                    RowBox[{"(*", "points", "*)"}], "Red", ",", 
+                    RowBox[{"PointSize", "[", "0.018", "]"}], ",", 
+                    RowBox[{"Point", "[", "pts01", "]"}]}], "}"}], ",", 
+                   RowBox[{"PlotRange", "->", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "1"}], "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}], ",", 
+                   RowBox[{"ImageSize", "->", "520"}], ",", 
+                   RowBox[{"Frame", "->", "True"}], ",", 
+                   RowBox[{"FrameTicks", "->", "None"}]}], "]"}], ",", 
+                 RowBox[{"{", 
+                  RowBox[{"\"\<MouseDown\>\"", ":>", 
+                   RowBox[{"Module", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"p01", ",", "pCM", ",", "snapped", ",", "idx"}], 
+                    "}"}], ",", 
+                    RowBox[{
+                    RowBox[{"p01", "=", 
+                    RowBox[{"MousePosition", "[", "\"\<Graphics\>\"", "]"}]}],
+                     ";", "\[IndentingNewLine]", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"p01", "===", "None"}], ",", 
+                    RowBox[{"Return", "[", "]"}]}], "]"}], ";", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"(*", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"convert", " ", "click", " ", "from", " ", "0"}], 
+                    ".."}], "1", " ", "to", " ", "cm"}], ",", "snap", ",", 
+                    RowBox[{"back", " ", "to", " ", "cm"}]}], "*)"}], 
+                    RowBox[{"pCM", "=", 
+                    RowBox[{"dishCM", "*", "p01"}]}], ";", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"snapped", "=", 
+                    RowBox[{"snapToCellCenterCM", "[", "pCM", "]"}]}], ";", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"CurrentValue", "[", "\"\<AltKey\>\"", "]"}], ",", 
+                    RowBox[{
+                    RowBox[{"idx", "=", 
+                    RowBox[{"nearestIndex", "[", 
+                    RowBox[{"snapped", ",", "ptsCM"}], "]"}]}], ";", 
+                    "\[IndentingNewLine]", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"idx", "=!=", 
+                    RowBox[{"Missing", "[", "\"\<none\>\"", "]"}]}], "&&", 
+                    RowBox[{
+                    RowBox[{"EuclideanDistance", "[", 
+                    RowBox[{"snapped", ",", 
+                    RowBox[{"ptsCM", "[", 
+                    RowBox[{"[", "idx", "]"}], "]"}]}], "]"}], "<=", 
+                    RowBox[{"0.5", "*", "cellCM"}]}]}], ",", 
+                    RowBox[{"ptsCM", "=", 
+                    RowBox[{"Delete", "[", 
+                    RowBox[{"ptsCM", ",", "idx"}], "]"}]}]}], "]"}]}], ",", 
+                    RowBox[{"(*", 
+                    RowBox[{"normal", " ", "click", " ", "adds"}], "*)"}], 
+                    RowBox[{"AppendTo", "[", 
+                    RowBox[{"ptsCM", ",", "snapped"}], "]"}]}], "]"}], 
+                    ";"}]}], "]"}]}], "}"}]}], "]"}], ",", 
+               RowBox[{"Spacer", "[", "15", "]"}], ",", 
+               RowBox[{"Column", "[", 
+                RowBox[{"{", 
+                 RowBox[{"g", ",", 
+                  RowBox[{"If", "[", 
+                   RowBox[{
+                    RowBox[{
+                    RowBox[{"Length", "[", "ptsCM", "]"}], ">=", "1"}], ",", 
+                    RowBox[{"Column", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Spacer", "[", "8", "]"}], ",", 
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<Points (cell centers) in cm:\>\"", ",", "11",
+                     ",", "Bold"}], "]"}], ",", 
+                    RowBox[{"Grid", "[", 
+                    RowBox[{
+                    RowBox[{"Prepend", "[", 
+                    RowBox[{
+                    RowBox[{"Table", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"i", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{
+                    RowBox[{"ptsCM", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"i", ",", "1"}], "]"}], "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"3", ",", "2"}], "}"}]}], "]"}], ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{
+                    RowBox[{"ptsCM", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"i", ",", "2"}], "]"}], "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"3", ",", "2"}], "}"}]}], "]"}]}], "}"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"i", ",", 
+                    RowBox[{"Length", "[", "ptsCM", "]"}]}], "}"}]}], "]"}], ",", 
+                    RowBox[{"{", 
+                    
+                    RowBox[{"\"\<#\>\"", ",", "\"\<x (cm)\>\"", 
+                    ",", "\"\<y (cm)\>\""}], "}"}]}], "]"}], ",", 
+                    RowBox[{"Frame", "->", "All"}], ",", 
+                    RowBox[{"Spacings", "->", 
+                    RowBox[{"{", 
+                    RowBox[{"1", ",", "0.7"}], "}"}]}]}], "]"}]}], "}"}], 
+                    "]"}], ",", "Nothing"}], "]"}]}], "}"}], "]"}]}], "}"}], 
+             "]"}]}]}], "]"}]}], ",", 
+        RowBox[{"Dynamic", "@", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"showMatrix", "&&", 
+            RowBox[{
+             RowBox[{"Length", "[", "ptsCM", "]"}], ">=", "2"}]}], ",", 
+           RowBox[{"Module", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{"pm", "=", 
+               RowBox[{
+                RowBox[{"predictProbMatrix", "[", "ptsCM", "]"}], 
+                "[", "\"\<probMatrix\>\"", "]"}]}], "}"}], ",", 
+             RowBox[{"Column", "[", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"Style", "[", 
+                 
+                 RowBox[{"\"\<Probability adjacency matrix P(i,j):\>\"", ",", 
+                  "12", ",", "Bold"}], "]"}], ",", 
+                RowBox[{"Grid", "[", 
+                 RowBox[{
+                  RowBox[{"Map", "[", 
+                   RowBox[{
+                    RowBox[{
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"#", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"2", ",", "2"}], "}"}]}], "]"}], "&"}], ",", "pm",
+                     ",", 
+                    RowBox[{"{", "2", "}"}]}], "]"}], ",", 
+                  RowBox[{"Frame", "->", "All"}]}], "]"}]}], "}"}], "]"}]}], 
+            "]"}], ",", "Nothing"}], "]"}]}]}], "}"}], "]"}]}], "]"}], 
+   "\n"}]}]], "Input",
+ CellChangeTimes->{{3.9789983372962055`*^9, 3.9789983372962055`*^9}},
+ CellLabel->
+  "In[287]:=",ExpressionUUID->"62fa2a5b-16b0-224d-b2aa-c805959ff709"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Loaded net from: \"\>", 
+   "\[InvisibleSpace]", \
+"\<\"D:\\\\!\:0441\:043a\:0440\:0438\:043f\:0442\:044b-20260202T041935Z-3-001\
+\\\\trainedNet4_flow_groupSplit.wlnet\"\>"}],
+  SequenceForm[
+  "Loaded net from: ", 
+   "D:\\!\:0441\:043a\:0440\:0438\:043f\:0442\:044b-20260202T041935Z-3-001\\\
+trainedNet4_flow_groupSplit.wlnet"],
+  Editable->False]], "Print",
+ CellChangeTimes->{3.978998338058485*^9},
+ CellLabel->
+  "During evaluation of \
+In[287]:=",ExpressionUUID->"add18bdc-9d9c-8a4a-993c-7594ed0fcf35"],
+
+Cell[BoxData[
+ DynamicModuleBox[{$CellContext`ptsCM$$ = {{3.375, 9.375}, {7.875, 9.375}, {
+  5.625, 7.875}, {5.625, 9.375}, {7.125, 7.875}, {4.125, 7.875}, {7.875, 
+  7.875}, {5.625, 6.375}}, $CellContext`thr$$ = 
+  0.592, $CellContext`pMaxThick$$ = 0.8, $CellContext`thicknessMax$$ = 
+  1., $CellContext`opacityMax$$ = 1., $CellContext`showMatrix$$ = 
+  False, $CellContext`showCellLabels$$ = False}, 
+  TagBox[GridBox[{
+     {
+      StyleBox["\<\"PhysarumAI: 12\[Times]12 cm dish (16\[Times]16 grid) \
+\[LongDash] click-to-place points\"\>",
+       StripOnInput->False,
+       FontSize->16,
+       FontWeight->Bold]},
+     {
+      TemplateBox[{"\"Threshold (show p \[GreaterEqual] thr): \"", 
+        SliderBox[
+         Dynamic[$CellContext`thr$$], {0, 1}], "\"  \"", 
+        DynamicBox[
+         ToBoxes[
+          NumberForm[$CellContext`thr$$, {2, 2}], StandardForm]], 
+        TemplateBox[{25}, "Spacer1"], 
+        CheckboxBox[
+         Dynamic[$CellContext`showCellLabels$$]], 
+        "\" show cell labels (A1..P16)\""},
+       "RowDefault"]},
+     {
+      TemplateBox[{"\"pMax for thickness/opacity mapping: \"", 
+        SliderBox[
+         Dynamic[$CellContext`pMaxThick$$], {0.05, 1}], "\"  \"", 
+        DynamicBox[
+         ToBoxes[
+          NumberForm[$CellContext`pMaxThick$$, {2, 2}], StandardForm]], 
+        TemplateBox[{20}, "Spacer1"], "\"Thickness scale: \"", 
+        SliderBox[
+         Dynamic[$CellContext`thicknessMax$$], {0.2, 2}], "\"  \"", 
+        DynamicBox[
+         ToBoxes[
+          NumberForm[$CellContext`thicknessMax$$, {2, 2}], StandardForm]], 
+        TemplateBox[{20}, "Spacer1"], "\"Opacity scale: \"", 
+        SliderBox[
+         Dynamic[$CellContext`opacityMax$$], {0.2, 1}], "\"  \"", 
+        DynamicBox[
+         ToBoxes[
+          NumberForm[$CellContext`opacityMax$$, {2, 2}], StandardForm]]},
+       "RowDefault"]},
+     {
+      TemplateBox[{
+        ButtonBox[
+        "\"Clear points\"", ButtonFunction :> ($CellContext`ptsCM$$ = {}), 
+         Appearance -> Automatic, Evaluator -> Automatic, Method -> 
+         "Preemptive"], 
+        TemplateBox[{10}, "Spacer1"], 
+        ButtonBox[
+        "\"Undo last\"", ButtonFunction :> 
+         If[Length[$CellContext`ptsCM$$] > 0, $CellContext`ptsCM$$ = 
+           Most[$CellContext`ptsCM$$]], Appearance -> Automatic, Evaluator -> 
+         Automatic, Method -> "Preemptive"], 
+        TemplateBox[{10}, "Spacer1"], 
+        CheckboxBox[
+         Dynamic[$CellContext`showMatrix$$]], "\" show probability matrix\""},
+       "RowDefault"]},
+     {
+      StyleBox["\<\"Click inside the dish to add a point (snaps to cell \
+center).  Alt+click near a point to delete it.\"\>",
+       StripOnInput->False,
+       LineColor->GrayLevel[0.35],
+       FrontFaceColor->GrayLevel[0.35],
+       BackFaceColor->GrayLevel[0.35],
+       GraphicsColor->GrayLevel[0.35],
+       FontSize->12,
+       FontColor->GrayLevel[0.35]]},
+     {
+      DynamicBox[ToBoxes[
+        Module[{$CellContext`res$, $CellContext`pm$, $CellContext`hubs$, \
+$CellContext`g$, $CellContext`pts01$}, $CellContext`pts01$ = 
+          Map[$CellContext`cmTo01, $CellContext`ptsCM$$]; $CellContext`res$ = 
+          If[Length[$CellContext`ptsCM$$] >= 2, 
+            $CellContext`predictProbMatrix[$CellContext`ptsCM$$], <|
+            "probMatrix" -> {}, 
+             "hubs" -> {}|>]; $CellContext`pm$ = $CellContext`res$[
+           "probMatrix"]; $CellContext`hubs$ = $CellContext`res$[
+           "hubs"]; $CellContext`g$ = If[Length[$CellContext`ptsCM$$] >= 2, 
+            $CellContext`makeGraph[$CellContext`ptsCM$$, $CellContext`pm$, \
+$CellContext`thr$$, $CellContext`pMaxThick$$, $CellContext`thicknessMax$$, \
+$CellContext`opacityMax$$], 
+            Style["Add at least 2 points to see predicted edges.", 12, 
+             GrayLevel[0.4]]]; Row[{
+            EventHandler[
+             Graphics[{
+               GrayLevel[0.97], 
+               Rectangle[{0, 0}, {1, 1}], 
+               $CellContext`gridLines01[], 
+               If[$CellContext`showCellLabels$$, 
+                $CellContext`cellLabels01[], {}], Red, 
+               PointSize[0.018], 
+               Point[$CellContext`pts01$]}, PlotRange -> {{0, 1}, {0, 1}}, 
+              ImageSize -> 520, Frame -> True, FrameTicks -> None], {
+             "MouseDown" :> 
+              Module[{$CellContext`p01$, $CellContext`pCM$, \
+$CellContext`snapped$, $CellContext`idx$}, $CellContext`p01$ = 
+                 MousePosition["Graphics"]; If[$CellContext`p01$ === None, 
+                  
+                  Return[]]; $CellContext`pCM$ = $CellContext`dishCM \
+$CellContext`p01$; $CellContext`snapped$ = \
+$CellContext`snapToCellCenterCM[$CellContext`pCM$]; If[
+                  CurrentValue[
+                  "AltKey"], $CellContext`idx$ = \
+$CellContext`nearestIndex[$CellContext`snapped$, $CellContext`ptsCM$$]; If[
+                    
+                    And[$CellContext`idx$ =!= Missing["none"], 
+                    EuclideanDistance[$CellContext`snapped$, 
+                    Part[$CellContext`ptsCM$$, $CellContext`idx$]] <= 
+                    0.5 $CellContext`cellCM], $CellContext`ptsCM$$ = 
+                    Delete[$CellContext`ptsCM$$, $CellContext`idx$]], 
+                  AppendTo[$CellContext`ptsCM$$, $CellContext`snapped$]]; 
+                Null]}], 
+            Spacer[15], 
+            Column[{$CellContext`g$, 
+              If[Length[$CellContext`ptsCM$$] >= 1, 
+               Column[{
+                 Spacer[8], 
+                 Style["Points (cell centers) in cm:", 11, Bold], 
+                 Grid[
+                  Prepend[
+                   Table[{$CellContext`i, 
+                    NumberForm[
+                    Part[$CellContext`ptsCM$$, $CellContext`i, 1], {3, 2}], 
+                    NumberForm[
+                    Part[$CellContext`ptsCM$$, $CellContext`i, 2], {3, 
+                    2}]}, {$CellContext`i, 
+                    Length[$CellContext`ptsCM$$]}], {
+                   "#", "x (cm)", "y (cm)"}], Frame -> All, 
+                  Spacings -> {1, 0.7}]}], Nothing]}]}]], StandardForm],
+       ImageSizeCache->{
+        1315.455176082137, {605.1159713760717, 262.86596690199804`}}]},
+     {
+      DynamicBox[ToBoxes[
+        If[
+         And[$CellContext`showMatrix$$, Length[$CellContext`ptsCM$$] >= 2], 
+         Module[{$CellContext`pm = \
+$CellContext`predictProbMatrix[$CellContext`ptsCM$$]["probMatrix"]}, 
+          Column[{
+            Style["Probability adjacency matrix P(i,j):", 12, Bold], 
+            Grid[
+             Map[NumberForm[#, {2, 2}]& , $CellContext`pm, {2}], Frame -> 
+             All]}]], Nothing], StandardForm],
+       ImageSizeCache->{
+        50.032228231430054`, {2.6660157227888703`, 9.045410488033667}}]}
+    },
+    DefaultBaseStyle->"Column",
+    GridBoxAlignment->{"Columns" -> {{Left}}},
+    GridBoxItemSize->{"Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+   "Column"],
+  DynamicModuleValues:>{}]], "Output",
+ CellChangeTimes->{
+  3.9789983381272736`*^9, {3.9789984250940857`*^9, 3.9789984395581703`*^9}},
+ CellLabel->
+  "Out[308]=",ExpressionUUID->"fcc002ee-4958-974e-a9c0-d3e4aa06e25f"]
+}, Open  ]]
+},
+WindowSize->{1428, 735.75},
+WindowMargins->{{1440, Automatic}, {Automatic, 0}},
+FrontEndVersion->"14.2 for Microsoft Windows (64-bit) (March 14, 2025)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"cbedfa1e-bd91-2e41-849c-61747be4e908"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[576, 22, 38226, 958, 3060, "Input",ExpressionUUID->"62fa2a5b-16b0-224d-b2aa-c805959ff709"],
+Cell[38805, 982, 557, 14, 22, "Print",ExpressionUUID->"add18bdc-9d9c-8a4a-993c-7594ed0fcf35"],
+Cell[39365, 998, 7142, 158, 1011, "Output",ExpressionUUID->"fcc002ee-4958-974e-a9c0-d3e4aa06e25f"]
+}, Open  ]]
+}
+]
+*)
+

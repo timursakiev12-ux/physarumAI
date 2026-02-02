@@ -1,0 +1,2684 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Wolfram 14.2' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       154,          7]
+NotebookDataLength[    113130,       2676]
+NotebookOptionsPosition[    112532,       2658]
+NotebookOutlinePosition[    112937,       2674]
+CellTagsIndexPosition[    112894,       2671]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{
+   "===", "===", "===", "===", "===", "===", "===", "===", "===", "===", "===",
+     "===", "===", "===", "===", "===", "===", "===", "===", 
+    RowBox[{"LOCAL", " ", "CSV", " ", "version", " ", 
+     RowBox[{"(", 
+      RowBox[{"no", " ", "Google", " ", "Sheets"}], ")"}], " ", 
+     RowBox[{"Uses", ":", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"-", 
+         RowBox[{"configurations", ".", "csv"}]}], "-", 
+        RowBox[{"probability_long", ".", "csv"}], "-", 
+        RowBox[{"distance_long", ".", "csv"}], "-", 
+        RowBox[{
+         RowBox[{"adjacency_long", ".", "csv"}], " ", 
+         RowBox[{"(", "optional", ")"}], " ", 
+         RowBox[{"edges_master", ".", "csv"}]}]}], "===", "===", "===", "===",
+        "===", "===", "===", "===", "===", "===", "===", "===", "===", "===", 
+       "===", "===", "===", "===", "==="}]}]}]}], "*)"}], 
+  RowBox[{
+   RowBox[{
+    RowBox[{"ClearAll", "[", 
+     RowBox[{
+     "dataDir", ",", "cfgFile", ",", "probFile", ",", "distFile", ",", 
+      "adjLongFile", ",", "edgesMasterFile", ",", "idColName", ",", 
+      "attractantsColName", ",", "probMatrixColName", ",", 
+      "distanceMatrixColName", ",", "rawToAssocRows", ",", "coerceAssoc", ",",
+       "cfgRows", ",", "probRows", ",", "distRows", ",", "adjLongRows", ",", 
+      "emRows", ",", "runs", ",", "cfgByRun", ",", "probByRun", ",", 
+      "distByRun", ",", "adjByRunMat", ",", "nTotalByRun", ",", 
+      "buildSymMatrix", ",", "buildRowAssociation", ",", "ds", ",", 
+      "matrixColsFound", ",", "parseNums", ",", "parseSquareMatrix", ",", 
+      "attractantsFromRow", ",", "safeRowLookup", ",", "cellCenter", ",", 
+      "cellRect", ",", "gridBackground", ",", "edgesFromMatrixProb", ",", 
+      "edgePairsFromBinaryMat", ",", "rngEdgesFromDistances", ",", 
+      "ggEdgesFromDistances", ",", "mstEdgesFromAttr", ",", "overlayPlot", ",",
+       "viewer", ",", "cellSizeCm", ",", "netMetrics", ",", 
+      "avgMetricsFromMatrixCols"}], "]"}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{"--", 
+     RowBox[{"--", 
+      RowBox[{"--", 
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{
+          RowBox[{
+           RowBox[{
+            RowBox[{
+             RowBox[{"SETTINGS", "--"}], "--"}], "--"}], "--"}], 
+          "--"}]}]}]}]}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"idColName", "=", "\"\<run_ID\>\""}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"attractantsColName", "=", "\"\<attractant\>\""}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{
+    "probMatrixColName", "=", "\"\<Probability adjacency matrix\>\""}], ";"}],
+    "\n", 
+   RowBox[{
+    RowBox[{"distanceMatrixColName", "=", "\"\<distance matrix\>\""}], ";"}], 
+   "\n", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{"12", "\[Times]", "12", " ", "cm", " ", "field"}], ",", 
+     RowBox[{
+      RowBox[{"16", "\[Times]", "16", " ", "grid"}], "=", 
+      RowBox[{
+       RowBox[{">", 
+        RowBox[{"1", " ", "cell"}]}], "=", 
+       RowBox[{
+        RowBox[{"12", "/", "16"}], " ", "cm"}]}]}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"cellSizeCm", "=", 
+     RowBox[{"12", "/", "16"}]}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{"--", 
+          RowBox[{"--", "0"}]}]}]}]}], ")"}], " ", 
+     RowBox[{"Files", "/", 
+      RowBox[{
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"folder", "--"}], "--"}], "--"}], "--"}], "--"}]}]}], 
+    "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"dataDir", "=", 
+     RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], " ", 
+   RowBox[{"(*", " ", 
+    RowBox[{"<", 
+     RowBox[{
+      RowBox[{"-", "or"}], " ", 
+      RowBox[{"set", ":", "\"\<C:\\\\Timur3\\\\mydata\\\\\>\""}]}]}], "*)"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{"cfgFile", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{"dataDir", ",", "\"\<configurations.csv\>\""}], "}"}], "]"}]}],
+     ";"}], "\n", 
+   RowBox[{
+    RowBox[{"probFile", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{"dataDir", ",", "\"\<probability_long.csv\>\""}], "}"}], 
+      "]"}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"distFile", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{"dataDir", ",", "\"\<distance_long.csv\>\""}], "}"}], "]"}]}], 
+    ";"}], "\n", 
+   RowBox[{
+    RowBox[{"adjLongFile", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{"dataDir", ",", "\"\<adjacency_long.csv\>\""}], "}"}], "]"}]}],
+     ";"}], "\n", 
+   RowBox[{
+    RowBox[{"edgesMasterFile", "=", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{"dataDir", ",", "\"\<edges_master.csv\>\""}], "}"}], "]"}]}], 
+    ";"}], " ", 
+   RowBox[{"(*", "optional", "*)"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{"If", "[", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"!", 
+        RowBox[{"FileExistsQ", "/@", 
+         RowBox[{"{", 
+          RowBox[{
+          "cfgFile", ",", "probFile", ",", "distFile", ",", "adjLongFile"}], 
+          "}"}]}]}], "//", "And"}], ",", 
+      RowBox[{
+       RowBox[{"Print", "[", 
+        RowBox[{"\"\<ERROR: Some required CSV files are missing in: \>\"", ",",
+          "dataDir"}], "]"}], ";", "\[IndentingNewLine]", 
+       RowBox[{
+       "Print", 
+        "[", "\"\<Need: configurations.csv, probability_long.csv, \
+distance_long.csv, adjacency_long.csv\>\"", "]"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"Abort", "[", "]"}], ";"}]}], "]"}], ";"}], "\n", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{"--", 
+          RowBox[{"--", 
+           RowBox[{"--", "1"}]}]}]}]}], ")"}], " ", "CSV"}], "->", 
+     RowBox[{"list", " ", "of", " ", "Associations", " ", 
+      RowBox[{
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{"with", " ", "numeric", " ", "coercion"}], ")"}], "--"}], 
+          "--"}], "--"}], "--"}], "--"}]}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"rawToAssocRows", "[", "file_", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"raw", ",", "headers", ",", "rows"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"raw", "=", 
+         RowBox[{"Import", "[", 
+          RowBox[{"file", ",", "\"\<CSV\>\""}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"raw", "===", "$Failed"}], "||", 
+           RowBox[{"raw", "===", 
+            RowBox[{"{", "}"}]}], "||", 
+           RowBox[{
+            RowBox[{"Length", "[", "raw", "]"}], "<", "2"}]}], ",", 
+          RowBox[{"Return", "[", "$Failed", "]"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"headers", "=", 
+         RowBox[{"raw", "[", 
+          RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"rows", "=", 
+         RowBox[{"raw", "[", 
+          RowBox[{"[", 
+           RowBox[{"2", ";;"}], "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"AssociationThread", "[", 
+           RowBox[{"headers", ",", "#"}], "]"}], "&"}], "/@", "rows"}]}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"coerceAssoc", "[", "a_Association", "]"}], ":=", 
+     RowBox[{"AssociationMap", "[", 
+      RowBox[{
+       RowBox[{"Function", "[", 
+        RowBox[{"v", ",", 
+         RowBox[{"Which", "[", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"v", "===", "\"\<\>\""}], "||", 
+            RowBox[{"v", "===", "\"\<NA\>\""}], "||", 
+            RowBox[{"v", "===", "\"\<NaN\>\""}]}], ",", 
+           RowBox[{"Missing", "[", "\"\<NA\>\"", "]"}], ",", 
+           RowBox[{
+            RowBox[{"StringQ", "[", "v", "]"}], "&&", 
+            RowBox[{"StringMatchQ", "[", 
+             RowBox[{"v", ",", 
+              RowBox[{
+              "RegularExpression", "[", "\"\<-?\\\\d+(?:\\\\.\\\\d+)?\>\"", 
+               "]"}]}], "]"}]}], ",", 
+           RowBox[{"ToExpression", "[", "v", "]"}], ",", "True", ",", "v"}], 
+          "]"}]}], "]"}], ",", "a"}], "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{"cfgRows", "=", 
+     RowBox[{"coerceAssoc", "/@", 
+      RowBox[{"rawToAssocRows", "[", "cfgFile", "]"}]}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"probRows", "=", 
+     RowBox[{"coerceAssoc", "/@", 
+      RowBox[{"rawToAssocRows", "[", "probFile", "]"}]}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"distRows", "=", 
+     RowBox[{"coerceAssoc", "/@", 
+      RowBox[{"rawToAssocRows", "[", "distFile", "]"}]}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"adjLongRows", "=", 
+     RowBox[{"coerceAssoc", "/@", 
+      RowBox[{"rawToAssocRows", "[", "adjLongFile", "]"}]}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{"emRows", "=", 
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{"FileExistsQ", "[", "edgesMasterFile", "]"}], ",", 
+       RowBox[{"coerceAssoc", "/@", 
+        RowBox[{"rawToAssocRows", "[", "edgesMasterFile", "]"}]}], ",", 
+       RowBox[{"{", "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{"If", "[", 
+     RowBox[{
+      RowBox[{"MemberQ", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+         "cfgRows", ",", "probRows", ",", "distRows", ",", "adjLongRows"}], 
+         "}"}], ",", "$Failed"}], "]"}], ",", 
+      RowBox[{
+       RowBox[{
+       "Print", 
+        "[", "\"\<ERROR: Failed to import one of the CSVs (bad format / \
+empty).\>\"", "]"}], ";", "\[IndentingNewLine]", 
+       RowBox[{"Abort", "[", "]"}], ";"}]}], "]"}], ";"}], "\n", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{"--", 
+          RowBox[{"--", "2"}]}]}]}]}], ")"}], " ", "Build", " ", "indices", " ",
+      "by", " ", 
+     RowBox[{
+      RowBox[{
+       RowBox[{
+        RowBox[{
+         RowBox[{"run_ID", "--"}], "--"}], "--"}], "--"}], "--"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"runs", "=", 
+     RowBox[{"Sort", "@", 
+      RowBox[{"DeleteMissing", "@", 
+       RowBox[{"Union", "[", 
+        RowBox[{"Lookup", "[", 
+         RowBox[{"cfgRows", ",", "idColName"}], "]"}], "]"}]}]}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{"cfgByRun", "=", 
+     RowBox[{"GroupBy", "[", 
+      RowBox[{"cfgRows", ",", 
+       RowBox[{
+        RowBox[{"Lookup", "[", 
+         RowBox[{"#", ",", "idColName"}], "]"}], "&"}]}], "]"}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"probByRun", "=", 
+     RowBox[{"GroupBy", "[", 
+      RowBox[{"probRows", ",", 
+       RowBox[{
+        RowBox[{"Lookup", "[", 
+         RowBox[{"#", ",", "idColName"}], "]"}], "&"}]}], "]"}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{"distByRun", "=", 
+     RowBox[{"GroupBy", "[", 
+      RowBox[{"distRows", ",", 
+       RowBox[{
+        RowBox[{"Lookup", "[", 
+         RowBox[{"#", ",", "idColName"}], "]"}], "&"}]}], "]"}]}], ";"}], 
+   "\n", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{"adjacency_long", " ", "grouped", " ", "by", " ", 
+     RowBox[{"(", 
+      RowBox[{"run_ID", "->", 
+       RowBox[{"matrixName", "->", "rows"}]}], ")"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"adjByRunMat", "=", 
+     RowBox[{"GroupBy", "[", 
+      RowBox[{"adjLongRows", ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Lookup", "[", 
+           RowBox[{"#", ",", "idColName"}], "]"}], "&"}], ",", 
+         RowBox[{
+          RowBox[{"Lookup", "[", 
+           RowBox[{"#", ",", "\"\<matrix\>\"", ",", "\"\<matrix1\>\""}], 
+           "]"}], "&"}]}], "}"}]}], "]"}]}], ";"}], "\n", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{"nTotal", " ", "per", " ", 
+      RowBox[{"run", ":", 
+       RowBox[{"prefer", " ", "probability_long"}]}]}], ",", 
+     RowBox[{"else", " ", "edges_master"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"nTotalByRun", "=", 
+     RowBox[{"Association", "@", 
+      RowBox[{"Map", "[", 
+       RowBox[{
+        RowBox[{"Function", "[", 
+         RowBox[{"run", ",", 
+          RowBox[{"run", "->", 
+           RowBox[{"Module", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"p", "=", 
+                RowBox[{"Lookup", "[", 
+                 RowBox[{"probByRun", ",", "run", ",", 
+                  RowBox[{"{", "}"}]}], "]"}]}], ",", 
+               RowBox[{"em", "=", 
+                RowBox[{"{", "}"}]}]}], "}"}], ",", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"p", "=!=", 
+                 RowBox[{"{", "}"}]}], "&&", 
+                RowBox[{"KeyExistsQ", "[", 
+                 RowBox[{
+                  RowBox[{"First", "[", "p", "]"}], ",", "\"\<nTotal\>\""}], 
+                 "]"}]}], ",", 
+               RowBox[{
+                RowBox[{"First", "[", "p", "]"}], "[", "\"\<nTotal\>\"", 
+                "]"}], ",", 
+               RowBox[{
+                RowBox[{"em", "=", 
+                 RowBox[{"Select", "[", 
+                  RowBox[{"emRows", ",", 
+                   RowBox[{
+                    RowBox[{
+                    RowBox[{"Lookup", "[", 
+                    RowBox[{"#", ",", "idColName", ",", 
+                    RowBox[{"Missing", "[", "]"}]}], "]"}], "===", "run"}], 
+                    "&"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+                RowBox[{"If", "[", 
+                 RowBox[{
+                  RowBox[{
+                   RowBox[{"em", "=!=", 
+                    RowBox[{"{", "}"}]}], "&&", 
+                   RowBox[{"KeyExistsQ", "[", 
+                    RowBox[{
+                    RowBox[{"First", "[", "em", "]"}], 
+                    ",", "\"\<nTotal\>\""}], "]"}]}], ",", 
+                  RowBox[{
+                   RowBox[{"First", "[", "em", "]"}], "[", "\"\<nTotal\>\"", 
+                   "]"}], ",", 
+                  RowBox[{"Missing", "[", "\"\<NA\>\"", "]"}]}], "]"}]}]}], 
+              "]"}]}], "]"}]}]}], "]"}], ",", "runs"}], "]"}]}]}], ";"}], 
+   "\n", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{"--", 
+          RowBox[{"--", "3"}]}]}]}]}], ")"}], " ", "Helpers", " ", "for", " ",
+      "matrix", " ", 
+     RowBox[{
+      RowBox[{
+       RowBox[{
+        RowBox[{
+         RowBox[{"construction", "--"}], "--"}], "--"}], "--"}], "--"}]}], 
+    "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"buildSymMatrix", "[", 
+      RowBox[{"rows_List", ",", "k_Integer", ",", "valKey_String"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", "mat", "}"}], ",", 
+       RowBox[{
+        RowBox[{"mat", "=", 
+         RowBox[{"ConstantArray", "[", 
+          RowBox[{"0", ",", 
+           RowBox[{"{", 
+            RowBox[{"k", ",", "k"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Do", "[", 
+         RowBox[{
+          RowBox[{"Module", "[", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"i", "=", 
+               RowBox[{"r", "[", "\"\<i\>\"", "]"}]}], ",", 
+              RowBox[{"j", "=", 
+               RowBox[{"r", "[", "\"\<j\>\"", "]"}]}], ",", 
+              RowBox[{"v", "=", 
+               RowBox[{"r", "[", "valKey", "]"}]}]}], "}"}], ",", 
+            RowBox[{
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"IntegerQ", "[", "i", "]"}], "&&", 
+                RowBox[{"IntegerQ", "[", "j", "]"}], "&&", 
+                RowBox[{"1", "<=", "i", "<=", "k"}], "&&", 
+                RowBox[{"1", "<=", "j", "<=", "k"}], "&&", 
+                RowBox[{"NumberQ", "[", "v", "]"}]}], ",", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"mat", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", "v"}], ";", 
+                "\[IndentingNewLine]", 
+                RowBox[{
+                 RowBox[{"mat", "[", 
+                  RowBox[{"[", 
+                   RowBox[{"j", ",", "i"}], "]"}], "]"}], "=", "v"}], ";"}]}],
+               "]"}], ";"}]}], "]"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"r", ",", "rows"}], "}"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", "mat"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"buildRowAssociation", "[", "run_", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"cfg", "=", 
+          RowBox[{"Lookup", "[", 
+           RowBox[{"cfgByRun", ",", "run", ",", 
+            RowBox[{"{", "}"}]}], "]"}]}], ",", "attr", ",", "k", ",", 
+         "pRows", ",", "dRows", ",", "pMat", ",", "dMat", ",", "matsNames", ",",
+          "matsAssoc"}], "}"}], ",", 
+       RowBox[{"(*", 
+        RowBox[{
+        "attractant", " ", "list", " ", "in", " ", "node", " ", "order"}], 
+        "*)"}], 
+       RowBox[{
+        RowBox[{"attr", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"cfg", "===", 
+            RowBox[{"{", "}"}]}], ",", 
+           RowBox[{"{", "}"}], ",", 
+           RowBox[{"Lookup", "[", 
+            RowBox[{
+             RowBox[{"SortBy", "[", 
+              RowBox[{"cfg", ",", 
+               RowBox[{
+                RowBox[{"#", "[", "\"\<node\>\"", "]"}], "&"}]}], "]"}], 
+             ",", "\"\<attractant_cell\>\""}], "]"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"k", "=", 
+         RowBox[{"Length", "[", "attr", "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"pRows", "=", 
+         RowBox[{"Lookup", "[", 
+          RowBox[{"probByRun", ",", "run", ",", 
+           RowBox[{"{", "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"dRows", "=", 
+         RowBox[{"Lookup", "[", 
+          RowBox[{"distByRun", ",", "run", ",", 
+           RowBox[{"{", "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"pMat", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"k", ">=", "1"}], ",", 
+           RowBox[{"buildSymMatrix", "[", 
+            RowBox[{"pRows", ",", "k", ",", "\"\<P_edge\>\""}], "]"}], ",", 
+           "$Failed"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"dMat", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"k", ">=", "1"}], ",", 
+           RowBox[{"buildSymMatrix", "[", 
+            RowBox[{"dRows", ",", "k", ",", "\"\<distance\>\""}], "]"}], ",", 
+           "$Failed"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"(*", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"matrices", " ", "matrix1"}], ".."}], "matrixN", " ", 
+          "from", " ", "adjacency_long"}], "*)"}], 
+        RowBox[{"matsNames", "=", 
+         RowBox[{"SortBy", "[", 
+          RowBox[{
+           RowBox[{"DeleteMissing", "@", 
+            RowBox[{"Union", "[", 
+             RowBox[{"Lookup", "[", 
+              RowBox[{
+               RowBox[{"Select", "[", 
+                RowBox[{"adjLongRows", ",", 
+                 RowBox[{
+                  RowBox[{
+                   RowBox[{"Lookup", "[", 
+                    RowBox[{"#", ",", "idColName"}], "]"}], "===", "run"}], 
+                  "&"}]}], "]"}], ",", "\"\<matrix\>\""}], "]"}], "]"}]}], ",", 
+           RowBox[{
+            RowBox[{"ToExpression", "@", 
+             RowBox[{"StringReplace", "[", 
+              RowBox[{
+               RowBox[{"ToString", "[", "#", "]"}], ",", 
+               RowBox[{"\"\<matrix\>\"", "->", "\"\<\>\""}]}], "]"}]}], 
+            "&"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"matsAssoc", "=", 
+         RowBox[{"Association", "@", 
+          RowBox[{"Table", "[", 
+           RowBox[{
+            RowBox[{"Module", "[", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"name", "=", "nm"}], ",", "rows2", ",", "mat2"}], 
+               "}"}], ",", 
+              RowBox[{
+               RowBox[{"rows2", "=", 
+                RowBox[{"Select", "[", 
+                 RowBox[{"adjLongRows", ",", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{
+                    RowBox[{"Lookup", "[", 
+                    RowBox[{"#", ",", "idColName"}], "]"}], "===", "run"}], "&&", 
+                    RowBox[{
+                    RowBox[{"ToString", "@", 
+                    RowBox[{"Lookup", "[", 
+                    RowBox[{"#", ",", "\"\<matrix\>\""}], "]"}]}], "===", 
+                    RowBox[{"ToString", "[", "name", "]"}]}]}], "&"}]}], 
+                 "]"}]}], ";", "\[IndentingNewLine]", 
+               RowBox[{"mat2", "=", 
+                RowBox[{"If", "[", 
+                 RowBox[{
+                  RowBox[{"k", ">=", "1"}], ",", 
+                  RowBox[{"buildSymMatrix", "[", 
+                   RowBox[{"rows2", ",", "k", ",", "\"\<weight\>\""}], "]"}], 
+                  ",", 
+                  RowBox[{"ConstantArray", "[", 
+                   RowBox[{"0", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"k", ",", "k"}], "}"}]}], "]"}]}], "]"}]}], ";", 
+               "\[IndentingNewLine]", 
+               RowBox[{"name", "->", "mat2"}]}]}], "]"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"nm", ",", "matsNames"}], "}"}]}], "]"}]}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Association", "@", 
+         RowBox[{"Join", "[", 
+          RowBox[{
+           RowBox[{"<|", 
+            RowBox[{
+             RowBox[{"idColName", "->", "run"}], ",", 
+             RowBox[{"attractantsColName", "->", "attr"}], ",", 
+             RowBox[{"probMatrixColName", "->", "pMat"}], ",", 
+             RowBox[{"distanceMatrixColName", "->", "dMat"}], ",", 
+             RowBox[{"\"\<nTotal\>\"", "->", 
+              RowBox[{"Lookup", "[", 
+               RowBox[{"nTotalByRun", ",", "run", ",", 
+                RowBox[{"Missing", "[", "\"\<NA\>\"", "]"}]}], "]"}]}]}], 
+            "|>"}], ",", "matsAssoc"}], "]"}]}]}]}], "]"}]}], ";"}], "\n", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{"build", " ", "Dataset", " ", "ds"}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"ds", "=", 
+     RowBox[{"Dataset", "[", 
+      RowBox[{"buildRowAssociation", "/@", "runs"}], "]"}]}], ";"}], "\n", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{"auto", "-", 
+     RowBox[{
+     "detect", " ", "all", " ", "possible", " ", "matrix", " ", "columns", " ",
+       "across", " ", "file"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"matrixColsFound", "=", 
+     RowBox[{"SortBy", "[", 
+      RowBox[{
+       RowBox[{"DeleteMissing", "@", 
+        RowBox[{"Union", "[", 
+         RowBox[{"Lookup", "[", 
+          RowBox[{"adjLongRows", ",", "\"\<matrix\>\""}], "]"}], "]"}]}], ",", 
+       RowBox[{
+        RowBox[{"ToExpression", "@", 
+         RowBox[{"StringReplace", "[", 
+          RowBox[{
+           RowBox[{"ToString", "[", "#", "]"}], ",", 
+           RowBox[{"\"\<matrix\>\"", "->", "\"\<\>\""}]}], "]"}]}], "&"}]}], 
+      "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{"Print", "[", 
+     RowBox[{"\"\<Detected matrix columns (from adjacency_long.csv): \>\"", ",",
+       "matrixColsFound"}], "]"}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"--", 
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{"--", 
+          RowBox[{"--", "4"}]}]}]}]}], ")"}], " ", "Original", " ", "helpers",
+      " ", 
+     RowBox[{
+      RowBox[{
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{"updated", " ", "to", " ", "accept", " ", "real", " ", 
+            RowBox[{"matrices", "/", "lists"}]}], ")"}], "--"}], "--"}], 
+        "--"}], "--"}], "--"}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"parseNums", "[", "x_", "]"}], ":=", 
+     RowBox[{"ToExpression", "@", 
+      RowBox[{"StringCases", "[", 
+       RowBox[{
+        RowBox[{"ToString", "[", "x", "]"}], ",", 
+        RowBox[{
+        "RegularExpression", "[", "\"\<-?\\\\d+(?:\\\\.\\\\d+)?\>\"", "]"}]}],
+        "]"}]}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"parseSquareMatrix", "[", 
+      RowBox[{"x_", "?", "MatrixQ"}], "]"}], ":=", "x"}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"parseSquareMatrix", "[", "x_", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"nums", ",", "n"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"nums", "=", 
+         RowBox[{"parseNums", "[", "x", "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"n", "=", 
+         RowBox[{"Round", "[", 
+          RowBox[{"Sqrt", "[", 
+           RowBox[{"Length", "[", "nums", "]"}], "]"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"n", "<=", "0"}], "||", 
+           RowBox[{
+            RowBox[{"n", "^", "2"}], "=!=", 
+            RowBox[{"Length", "[", "nums", "]"}]}]}], ",", "$Failed", ",", 
+          RowBox[{"Partition", "[", 
+           RowBox[{"nums", ",", "n"}], "]"}]}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"attractantsFromRow", "[", "row_Association", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"a", "=", 
+         RowBox[{"Lookup", "[", 
+          RowBox[{"row", ",", "attractantsColName", ",", 
+           RowBox[{"{", "}"}]}], "]"}]}], "}"}], ",", 
+       RowBox[{"Which", "[", 
+        RowBox[{
+         RowBox[{"ListQ", "[", "a", "]"}], ",", 
+         RowBox[{"Select", "[", 
+          RowBox[{"a", ",", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"IntegerQ", "[", "#", "]"}], "&&", 
+             RowBox[{"1", "<=", "#", "<=", "256"}]}], "&"}]}], "]"}], ",", 
+         "True", ",", 
+         RowBox[{"Select", "[", 
+          RowBox[{
+           RowBox[{"parseNums", "@", "a"}], ",", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"IntegerQ", "[", "#", "]"}], "&&", 
+             RowBox[{"1", "<=", "#", "<=", "256"}]}], "&"}]}], "]"}]}], 
+        "]"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"safeRowLookup", "[", "exp_", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"r", "=", 
+         RowBox[{"SelectFirst", "[", 
+          RowBox[{
+           RowBox[{"Normal", "@", "ds"}], ",", 
+           RowBox[{
+            RowBox[{
+             RowBox[{"ToString", "@", 
+              RowBox[{"Lookup", "[", 
+               RowBox[{"#", ",", "idColName", ",", "\"\<\>\""}], "]"}]}], "==", 
+             RowBox[{"ToString", "@", "exp"}]}], "&"}], ",", 
+           RowBox[{"Missing", "[", "\"\<NotFound\>\"", "]"}]}], "]"}]}], 
+        "}"}], ",", 
+       RowBox[{"If", "[", 
+        RowBox[{
+         RowBox[{"r", "===", 
+          RowBox[{"Missing", "[", "\"\<NotFound\>\"", "]"}]}], ",", 
+         RowBox[{"Missing", "[", "\"\<NotFound\>\"", "]"}], ",", "r"}], 
+        "]"}]}], "]"}]}], ";"}], "\n", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{"cell", " ", "index"}], "->", 
+     RowBox[{"center", " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{
+          RowBox[{"in", " ", "grid", " ", "coords", " ", "0"}], ".."}], 
+         "16"}], ",", 
+        RowBox[{
+         RowBox[{"origin", " ", "bottom"}], "-", 
+         RowBox[{"left", " ", "visually"}]}]}], ")"}]}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"cellCenter", "[", "n_Integer", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"r", ",", "c"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"r", "=", 
+         RowBox[{"Quotient", "[", 
+          RowBox[{
+           RowBox[{"n", "-", "1"}], ",", "16"}], "]"}]}], ";", 
+        RowBox[{"c", "=", 
+         RowBox[{"Mod", "[", 
+          RowBox[{
+           RowBox[{"n", "-", "1"}], ",", "16"}], "]"}]}], ";", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"c", "+", "0.5"}], ",", 
+          RowBox[{"15", "-", "r", "+", "0.5"}]}], "}"}]}]}], "]"}]}], ";"}], "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"cellRect", "[", "n_Integer", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"r", ",", "c"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"r", "=", 
+         RowBox[{"Quotient", "[", 
+          RowBox[{
+           RowBox[{"n", "-", "1"}], ",", "16"}], "]"}]}], ";", 
+        RowBox[{"c", "=", 
+         RowBox[{"Mod", "[", 
+          RowBox[{
+           RowBox[{"n", "-", "1"}], ",", "16"}], "]"}]}], ";", 
+        RowBox[{"Rectangle", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"c", ",", 
+            RowBox[{"15", "-", "r"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"c", "+", "1"}], ",", 
+            RowBox[{"16", "-", "r"}]}], "}"}]}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"gridBackground", "[", 
+      RowBox[{"attr_List", ",", 
+       RowBox[{"numOpacity_", "?", "NumericQ"}]}], "]"}], ":=", 
+     RowBox[{"Graphics", "[", 
+      RowBox[{
+       RowBox[{"Table", "[", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"If", "[", 
+            RowBox[{
+             RowBox[{"MemberQ", "[", 
+              RowBox[{"attr", ",", "n"}], "]"}], ",", "Red", ",", "White"}], 
+            "]"}], ",", 
+           RowBox[{"EdgeForm", "[", 
+            RowBox[{"GrayLevel", "[", "0.8", "]"}], "]"}], ",", 
+           RowBox[{"cellRect", "[", "n", "]"}], ",", 
+           RowBox[{"Inset", "[", 
+            RowBox[{
+             RowBox[{"Style", "[", 
+              RowBox[{"n", ",", "9", ",", "Bold", ",", 
+               RowBox[{"If", "[", 
+                RowBox[{
+                 RowBox[{"MemberQ", "[", 
+                  RowBox[{"attr", ",", "n"}], "]"}], ",", "White", ",", 
+                 "Black"}], "]"}], ",", 
+               RowBox[{"Opacity", "[", "numOpacity", "]"}]}], "]"}], ",", 
+             RowBox[{"cellCenter", "[", "n", "]"}]}], "]"}]}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"n", ",", "1", ",", "256"}], "}"}]}], "]"}], ",", 
+       RowBox[{"PlotRange", "->", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"0", ",", "16"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{"0", ",", "16"}], "}"}]}], "}"}]}], ",", 
+       RowBox[{"ImageSize", "->", "700"}], ",", 
+       RowBox[{"Background", "->", "White"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"edgesFromMatrixProb", "[", 
+      RowBox[{
+       RowBox[{"probMat_", "?", "MatrixQ"}], ",", "attractants_List", ",", 
+       RowBox[{"thr_", "?", "NumericQ"}]}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"k", ",", "edges"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"k", "=", 
+         RowBox[{"Min", "[", 
+          RowBox[{
+           RowBox[{"Length", "[", "probMat", "]"}], ",", 
+           RowBox[{"Length", "[", "attractants", "]"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"edges", "=", 
+         RowBox[{
+          RowBox[{"Reap", "[", 
+           RowBox[{"Do", "[", 
+            RowBox[{
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"i", "<", "j"}], ",", 
+               RowBox[{"With", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"p", "=", 
+                   RowBox[{"probMat", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"i", ",", "j"}], "]"}], "]"}]}], "}"}], ",", 
+                 RowBox[{"If", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"NumberQ", "[", "p", "]"}], "&&", 
+                    RowBox[{"p", ">=", "thr"}]}], ",", 
+                   RowBox[{"Sow", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"attractants", "[", 
+                    RowBox[{"[", "i", "]"}], "]"}], ",", 
+                    RowBox[{"attractants", "[", 
+                    RowBox[{"[", "j", "]"}], "]"}], ",", 
+                    RowBox[{"N", "@", "p"}]}], "}"}], "]"}]}], "]"}]}], 
+                "]"}]}], "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"i", ",", "1", ",", "k"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"j", ",", "1", ",", "k"}], "}"}]}], "]"}], "]"}], "[", 
+          RowBox[{"[", "2", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"edges", "===", 
+           RowBox[{"{", "}"}]}], ",", 
+          RowBox[{"{", "}"}], ",", 
+          RowBox[{"First", "[", "edges", "]"}]}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"edgePairsFromBinaryMat", "[", 
+      RowBox[{
+       RowBox[{"mat_", "?", "MatrixQ"}], ",", "attractants_List"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"k", ",", "pairs"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"k", "=", 
+         RowBox[{"Min", "[", 
+          RowBox[{
+           RowBox[{"Length", "[", "mat", "]"}], ",", 
+           RowBox[{"Length", "[", "attractants", "]"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"pairs", "=", 
+         RowBox[{
+          RowBox[{"Reap", "[", 
+           RowBox[{"Do", "[", 
+            RowBox[{
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"i", "<", "j"}], ",", 
+               RowBox[{"With", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"w", "=", 
+                   RowBox[{"mat", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"i", ",", "j"}], "]"}], "]"}]}], "}"}], ",", 
+                 RowBox[{"If", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"NumberQ", "[", "w", "]"}], "&&", 
+                    RowBox[{"w", ">", "0"}]}], ",", 
+                   RowBox[{"Sow", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"attractants", "[", 
+                    RowBox[{"[", "i", "]"}], "]"}], ",", 
+                    RowBox[{"attractants", "[", 
+                    RowBox[{"[", "j", "]"}], "]"}]}], "}"}], "]"}]}], "]"}]}],
+                 "]"}]}], "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"i", ",", "1", ",", "k"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"j", ",", "1", ",", "k"}], "}"}]}], "]"}], "]"}], "[", 
+          RowBox[{"[", "2", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"pairs", "===", 
+           RowBox[{"{", "}"}]}], ",", 
+          RowBox[{"{", "}"}], ",", 
+          RowBox[{"First", "[", "pairs", "]"}]}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"rngEdgesFromDistances", "[", 
+      RowBox[{
+       RowBox[{"dist_", "?", "MatrixQ"}], ",", "attractants_List"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"k", ",", "edges"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"k", "=", 
+         RowBox[{"Min", "[", 
+          RowBox[{
+           RowBox[{"Length", "[", "dist", "]"}], ",", 
+           RowBox[{"Length", "[", "attractants", "]"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"edges", "=", 
+         RowBox[{
+          RowBox[{"Reap", "[", 
+           RowBox[{"Do", "[", 
+            RowBox[{
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"i", "<", "j"}], ",", 
+               RowBox[{"With", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"dij", "=", 
+                   RowBox[{"dist", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"i", ",", "j"}], "]"}], "]"}]}], "}"}], ",", 
+                 RowBox[{"If", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"NumberQ", "[", "dij", "]"}], "&&", 
+                    RowBox[{"dij", ">", "0"}], "&&", 
+                    RowBox[{"!", 
+                    RowBox[{"AnyTrue", "[", 
+                    RowBox[{
+                    RowBox[{"Delete", "[", 
+                    RowBox[{
+                    RowBox[{"Range", "[", "k", "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"{", "i", "}"}], ",", 
+                    RowBox[{"{", "j", "}"}]}], "}"}]}], "]"}], ",", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Max", "[", 
+                    RowBox[{
+                    RowBox[{"dist", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"i", ",", "#"}], "]"}], "]"}], ",", 
+                    RowBox[{"dist", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"j", ",", "#"}], "]"}], "]"}]}], "]"}], "<", 
+                    "dij"}], "&"}]}], "]"}]}]}], ",", 
+                   RowBox[{"Sow", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"attractants", "[", 
+                    RowBox[{"[", "i", "]"}], "]"}], ",", 
+                    RowBox[{"attractants", "[", 
+                    RowBox[{"[", "j", "]"}], "]"}]}], "}"}], "]"}]}], "]"}]}],
+                 "]"}]}], "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"i", ",", "1", ",", "k"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"j", ",", "1", ",", "k"}], "}"}]}], "]"}], "]"}], "[", 
+          RowBox[{"[", "2", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"edges", "===", 
+           RowBox[{"{", "}"}]}], ",", 
+          RowBox[{"{", "}"}], ",", 
+          RowBox[{"First", "[", "edges", "]"}]}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"ggEdgesFromDistances", "[", 
+      RowBox[{
+       RowBox[{"dist_", "?", "MatrixQ"}], ",", "attractants_List"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"k", ",", "edges"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"k", "=", 
+         RowBox[{"Min", "[", 
+          RowBox[{
+           RowBox[{"Length", "[", "dist", "]"}], ",", 
+           RowBox[{"Length", "[", "attractants", "]"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"edges", "=", 
+         RowBox[{
+          RowBox[{"Reap", "[", 
+           RowBox[{"Do", "[", 
+            RowBox[{
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"i", "<", "j"}], ",", 
+               RowBox[{"With", "[", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"dij", "=", 
+                   RowBox[{"dist", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"i", ",", "j"}], "]"}], "]"}]}], "}"}], ",", 
+                 RowBox[{"If", "[", 
+                  RowBox[{
+                   RowBox[{
+                    RowBox[{"NumberQ", "[", "dij", "]"}], "&&", 
+                    RowBox[{"dij", ">", "0"}], "&&", 
+                    RowBox[{"AllTrue", "[", 
+                    RowBox[{
+                    RowBox[{"Delete", "[", 
+                    RowBox[{
+                    RowBox[{"Range", "[", "k", "]"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"{", "i", "}"}], ",", 
+                    RowBox[{"{", "j", "}"}]}], "}"}]}], "]"}], ",", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"dist", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"i", ",", "#"}], "]"}], "]"}], "^", "2"}], "+", 
+                    RowBox[{
+                    RowBox[{"dist", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"j", ",", "#"}], "]"}], "]"}], "^", "2"}]}], ">=", 
+                    RowBox[{"dij", "^", "2"}]}], "&"}]}], "]"}]}], ",", 
+                   RowBox[{"Sow", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"attractants", "[", 
+                    RowBox[{"[", "i", "]"}], "]"}], ",", 
+                    RowBox[{"attractants", "[", 
+                    RowBox[{"[", "j", "]"}], "]"}]}], "}"}], "]"}]}], "]"}]}],
+                 "]"}]}], "]"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"i", ",", "1", ",", "k"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"j", ",", "1", ",", "k"}], "}"}]}], "]"}], "]"}], "[", 
+          RowBox[{"[", "2", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"edges", "===", 
+           RowBox[{"{", "}"}]}], ",", 
+          RowBox[{"{", "}"}], ",", 
+          RowBox[{"First", "[", "edges", "]"}]}], "]"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"mstEdgesFromAttr", "[", "attr_List", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+        "n", ",", "pts", ",", "pairs2", ",", "weights", ",", "g", ",", "t"}], 
+        "}"}], ",", 
+       RowBox[{
+        RowBox[{"n", "=", 
+         RowBox[{"Length", "[", "attr", "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"n", "<=", "1"}], ",", 
+          RowBox[{"Return", "[", 
+           RowBox[{"{", "}"}], "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"pts", "=", 
+         RowBox[{"AssociationThread", "[", 
+          RowBox[{"attr", "->", 
+           RowBox[{"(", 
+            RowBox[{"cellCenter", "/@", "attr"}], ")"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"pairs2", "=", 
+         RowBox[{"Subsets", "[", 
+          RowBox[{"attr", ",", 
+           RowBox[{"{", "2", "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"weights", "=", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"EuclideanDistance", "[", 
+            RowBox[{
+             RowBox[{"pts", "[", "#1", "]"}], ",", 
+             RowBox[{"pts", "[", "#2", "]"}]}], "]"}], "&"}], "@@@", 
+          "pairs2"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"g", "=", 
+         RowBox[{"Graph", "[", 
+          RowBox[{"attr", ",", 
+           RowBox[{"UndirectedEdge", "@@@", "pairs2"}], ",", 
+           RowBox[{"EdgeWeight", "->", "weights"}], ",", 
+           RowBox[{"VertexLabels", "->", "None"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"t", "=", 
+         RowBox[{"FindSpanningTree", "[", 
+          RowBox[{"g", ",", 
+           RowBox[{"Method", "->", "\"\<Kruskal\>\""}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"(", 
+           RowBox[{"List", "@@", "#"}], ")"}], "&"}], "/@", 
+         RowBox[{"EdgeList", "[", "t", "]"}]}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"netMetrics", "[", 
+      RowBox[{"attr_List", ",", "edgePairs_List"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"n", ",", "m", ",", "pts", ",", "lenCm", ",", "density"}], 
+        "}"}], ",", 
+       RowBox[{
+        RowBox[{"n", "=", 
+         RowBox[{"Length", "[", "attr", "]"}]}], ";", 
+        RowBox[{"m", "=", 
+         RowBox[{"Length", "[", "edgePairs", "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"pts", "=", 
+         RowBox[{"AssociationThread", "[", 
+          RowBox[{"attr", "->", 
+           RowBox[{"(", 
+            RowBox[{"cellCenter", "/@", "attr"}], ")"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"lenCm", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"m", "==", "0"}], "||", 
+            RowBox[{"n", "==", "0"}]}], ",", "0", ",", 
+           RowBox[{"Total", "[", 
+            RowBox[{"cellSizeCm", "*", 
+             RowBox[{"(", 
+              RowBox[{
+               RowBox[{
+                RowBox[{"EuclideanDistance", "[", 
+                 RowBox[{
+                  RowBox[{"pts", "[", "#1", "]"}], ",", 
+                  RowBox[{"pts", "[", "#2", "]"}]}], "]"}], "&"}], "@@@", 
+               "edgePairs"}], ")"}]}], "]"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"density", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"n", "<=", "1"}], ",", "0", ",", 
+           RowBox[{"N", "[", 
+            RowBox[{
+             RowBox[{"(", 
+              RowBox[{"2", " ", "m"}], ")"}], "/", 
+             RowBox[{"(", 
+              RowBox[{"n", " ", 
+               RowBox[{"(", 
+                RowBox[{"n", "-", "1"}], ")"}]}], ")"}]}], "]"}]}], "]"}]}], ";",
+         "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{"lenCm", ",", "density"}], "}"}]}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"avgMetricsFromMatrixCols", "[", 
+      RowBox[{"row_Association", ",", "attr_List"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"mats", ",", "perMat", ",", "edgeCounts", ",", "densities"}], 
+        "}"}], ",", 
+       RowBox[{
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"attr", "===", 
+            RowBox[{"{", "}"}]}], "||", 
+           RowBox[{"matrixColsFound", "===", 
+            RowBox[{"{", "}"}]}]}], ",", 
+          RowBox[{"Return", "[", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "0"}], "}"}], "]"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"mats", "=", 
+         RowBox[{"DeleteCases", "[", 
+          RowBox[{
+           RowBox[{"parseSquareMatrix", "/@", 
+            RowBox[{"(", 
+             RowBox[{"Lookup", "[", 
+              RowBox[{"row", ",", "matrixColsFound", ",", 
+               RowBox[{"Missing", "[", "\"\<NA\>\"", "]"}]}], "]"}], ")"}]}], 
+           ",", 
+           RowBox[{"$Failed", "|", 
+            RowBox[{"Missing", "[", "\"\<NA\>\"", "]"}]}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{"mats", "===", 
+           RowBox[{"{", "}"}]}], ",", 
+          RowBox[{"Return", "[", 
+           RowBox[{"{", 
+            RowBox[{"0", ",", "0"}], "}"}], "]"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"perMat", "=", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"Module", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"mat", "=", 
+                RowBox[{"mats", "[", 
+                 RowBox[{"[", "t", "]"}], "]"}]}], ",", "k", ",", "m", ",", 
+               "den"}], "}"}], ",", 
+             RowBox[{
+              RowBox[{"k", "=", 
+               RowBox[{"Min", "[", 
+                RowBox[{
+                 RowBox[{"Length", "[", "attr", "]"}], ",", 
+                 RowBox[{"Length", "[", "mat", "]"}]}], "]"}]}], ";", 
+              "\[IndentingNewLine]", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"k", "<=", "1"}], ",", 
+                RowBox[{"Return", "[", 
+                 RowBox[{"{", 
+                  RowBox[{"0", ",", "0"}], "}"}], "]"}]}], "]"}], ";", 
+              "\[IndentingNewLine]", 
+              RowBox[{"m", "=", 
+               RowBox[{"Total", "@", 
+                RowBox[{"Flatten", "@", 
+                 RowBox[{"Table", "[", 
+                  RowBox[{
+                   RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"i", "<", "j"}], "&&", 
+                    RowBox[{"NumberQ", "[", 
+                    RowBox[{"mat", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"i", ",", "j"}], "]"}], "]"}], "]"}], "&&", 
+                    RowBox[{
+                    RowBox[{"mat", "[", 
+                    RowBox[{"[", 
+                    RowBox[{"i", ",", "j"}], "]"}], "]"}], ">", "0"}]}], ",", 
+                    "1", ",", "0"}], "]"}], ",", 
+                   RowBox[{"{", 
+                    RowBox[{"i", ",", "1", ",", "k"}], "}"}], ",", 
+                   RowBox[{"{", 
+                    RowBox[{"j", ",", "1", ",", "k"}], "}"}]}], "]"}]}]}]}], ";",
+               "\[IndentingNewLine]", 
+              RowBox[{"den", "=", 
+               RowBox[{"N", "[", 
+                RowBox[{
+                 RowBox[{"(", 
+                  RowBox[{"2", " ", "m"}], ")"}], "/", 
+                 RowBox[{"(", 
+                  RowBox[{"k", " ", 
+                   RowBox[{"(", 
+                    RowBox[{"k", "-", "1"}], ")"}]}], ")"}]}], "]"}]}], ";", 
+              "\[IndentingNewLine]", 
+              RowBox[{"{", 
+               RowBox[{"m", ",", "den"}], "}"}]}]}], "]"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"t", ",", 
+             RowBox[{"Length", "[", "mats", "]"}]}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"edgeCounts", "=", 
+         RowBox[{"perMat", "[", 
+          RowBox[{"[", 
+           RowBox[{"All", ",", "1"}], "]"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"densities", "=", 
+         RowBox[{"perMat", "[", 
+          RowBox[{"[", 
+           RowBox[{"All", ",", "2"}], "]"}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"Mean", "[", "edgeCounts", "]"}], ",", 
+          RowBox[{"Mean", "[", "densities", "]"}]}], "}"}]}]}], "]"}]}], 
+    ";"}], "\[IndentingNewLine]", "\n", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"overlayPlot", "[", 
+      RowBox[{
+      "attr_List", ",", "physEdges_List", ",", "rngEdges_List", ",", 
+       "ggEdges_List", ",", "mstEdges_List", ",", "selPairs_List", ",", 
+       "numOpacity_", ",", "showRNG_", ",", "showGG_", ",", "showMST_", ",", 
+       "showSel_"}], "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+        "pts", ",", "rngG", ",", "ggG", ",", "mstG", ",", "selG", ",", 
+         "physG", ",", "vtxG"}], "}"}], ",", 
+       RowBox[{
+        RowBox[{"pts", "=", 
+         RowBox[{"AssociationThread", "[", 
+          RowBox[{"attr", "->", 
+           RowBox[{"(", 
+            RowBox[{"cellCenter", "/@", "attr"}], ")"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"rngG", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"TrueQ", "[", "showRNG", "]"}], ",", 
+           RowBox[{"Table", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"Directive", "[", 
+                RowBox[{"Yellow", ",", 
+                 RowBox[{"Thickness", "[", "0.03", "]"}]}], "]"}], ",", 
+               RowBox[{"Line", "[", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"pts", "[", 
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}], "]"}], ",", 
+                  RowBox[{"pts", "[", 
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], "]"}]}], "}"}], "]"}]}], 
+              "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"e", ",", "rngEdges"}], "}"}]}], "]"}], ",", 
+           RowBox[{"{", "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"ggG", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"TrueQ", "[", "showGG", "]"}], ",", 
+           RowBox[{"Table", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"Directive", "[", 
+                RowBox[{"Pink", ",", 
+                 RowBox[{"Thickness", "[", "0.02", "]"}]}], "]"}], ",", 
+               RowBox[{"Line", "[", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"pts", "[", 
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}], "]"}], ",", 
+                  RowBox[{"pts", "[", 
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], "]"}]}], "}"}], "]"}]}], 
+              "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"e", ",", "ggEdges"}], "}"}]}], "]"}], ",", 
+           RowBox[{"{", "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"mstG", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{"TrueQ", "[", "showMST", "]"}], ",", 
+           RowBox[{"Table", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"Directive", "[", 
+                RowBox[{"Green", ",", 
+                 RowBox[{"Thickness", "[", "0.010", "]"}]}], "]"}], ",", 
+               RowBox[{"Line", "[", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"pts", "[", 
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}], "]"}], ",", 
+                  RowBox[{"pts", "[", 
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], "]"}]}], "}"}], "]"}]}], 
+              "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"e", ",", "mstEdges"}], "}"}]}], "]"}], ",", 
+           RowBox[{"{", "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"selG", "=", 
+         RowBox[{"If", "[", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"TrueQ", "[", "showSel", "]"}], "&&", 
+            RowBox[{"ListQ", "[", "selPairs", "]"}], "&&", 
+            RowBox[{"selPairs", "=!=", 
+             RowBox[{"{", "}"}]}]}], ",", 
+           RowBox[{"Table", "[", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{
+               RowBox[{"Directive", "[", 
+                RowBox[{"Blue", ",", 
+                 RowBox[{"Thickness", "[", "0.006", "]"}]}], "]"}], ",", 
+               RowBox[{"Line", "[", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"pts", "[", 
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}], "]"}], ",", 
+                  RowBox[{"pts", "[", 
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], "]"}]}], "}"}], "]"}]}], 
+              "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"e", ",", "selPairs"}], "}"}]}], "]"}], ",", 
+           RowBox[{"{", "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+        RowBox[{"physG", "=", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"Black", ",", 
+             RowBox[{"Thickness", "[", "0.0025", "]"}], ",", 
+             RowBox[{"Line", "[", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"pts", "[", 
+                 RowBox[{"e", "[", 
+                  RowBox[{"[", "1", "]"}], "]"}], "]"}], ",", 
+                RowBox[{"pts", "[", 
+                 RowBox[{"e", "[", 
+                  RowBox[{"[", "2", "]"}], "]"}], "]"}]}], "}"}], "]"}], ",", 
+             RowBox[{"Inset", "[", 
+              RowBox[{
+               RowBox[{"Style", "[", 
+                RowBox[{
+                 RowBox[{"NumberForm", "[", 
+                  RowBox[{
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "3", "]"}], "]"}], ",", 
+                   RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], ",", "10",
+                  ",", "Bold", ",", 
+                 RowBox[{"Background", "->", "White"}]}], "]"}], ",", 
+               RowBox[{"Mean", "[", 
+                RowBox[{"{", 
+                 RowBox[{
+                  RowBox[{"pts", "[", 
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "1", "]"}], "]"}], "]"}], ",", 
+                  RowBox[{"pts", "[", 
+                   RowBox[{"e", "[", 
+                    RowBox[{"[", "2", "]"}], "]"}], "]"}]}], "}"}], "]"}]}], 
+              "]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"e", ",", "physEdges"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"vtxG", "=", 
+         RowBox[{"Table", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{"Black", ",", 
+             RowBox[{"PointSize", "[", "0.018", "]"}], ",", 
+             RowBox[{"Point", "[", 
+              RowBox[{"pts", "[", "n", "]"}], "]"}]}], "}"}], ",", 
+           RowBox[{"{", 
+            RowBox[{"n", ",", "attr"}], "}"}]}], "]"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Show", "[", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"gridBackground", "[", 
+             RowBox[{"attr", ",", "numOpacity"}], "]"}], ",", 
+            RowBox[{"Graphics", "[", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"Evaluate", "@", "rngG"}], ",", 
+                RowBox[{"Evaluate", "@", "ggG"}], ",", 
+                RowBox[{"Evaluate", "@", "mstG"}], ",", 
+                RowBox[{"Evaluate", "@", "selG"}], ",", 
+                RowBox[{"Evaluate", "@", "physG"}], ",", 
+                RowBox[{"Evaluate", "@", "vtxG"}]}], "}"}], ",", 
+              RowBox[{"PlotRange", "->", 
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"{", 
+                  RowBox[{"0", ",", "16"}], "}"}], ",", 
+                 RowBox[{"{", 
+                  RowBox[{"0", ",", "16"}], "}"}]}], "}"}]}]}], "]"}]}], 
+           "}"}], ",", 
+          RowBox[{"ImageSize", "->", "700"}]}], "]"}]}]}], "]"}]}], ";"}], 
+   "\n", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{"--", 
+     RowBox[{"--", 
+      RowBox[{"--", 
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{
+          RowBox[{
+           RowBox[{
+            RowBox[{
+             RowBox[{"Viewer", "--"}], "--"}], "--"}], "--"}], 
+          "--"}]}]}]}]}]}], "*)"}], "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"viewer", "[", "]"}], ":=", 
+     RowBox[{"Module", "[", 
+      RowBox[{
+       RowBox[{"{", "ids", "}"}], ",", 
+       RowBox[{
+        RowBox[{"ids", "=", 
+         RowBox[{"DeleteMissing", "@", 
+          RowBox[{"Normal", "@", 
+           RowBox[{"ds", "[", 
+            RowBox[{"All", ",", "idColName"}], "]"}]}]}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"If", "[", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"ids", "===", 
+            RowBox[{"{", "}"}]}], "||", 
+           RowBox[{"ids", "===", 
+            RowBox[{"Missing", "[", 
+             RowBox[{"\"\<KeyAbsent\>\"", ",", "idColName"}], "]"}]}]}], ",", 
+          RowBox[{
+           RowBox[{"Print", "[", 
+            
+            RowBox[{"\"\<ERROR: Column \>\"", ",", "idColName", 
+             ",", "\"\< not found or empty in local dataset.\>\""}], "]"}], ";",
+            "\[IndentingNewLine]", 
+           RowBox[{"Abort", "[", "]"}], ";"}]}], "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"Manipulate", "[", 
+         RowBox[{
+          RowBox[{"Module", "[", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+             "row", ",", "attr", ",", "probMat", ",", "distMat", ",", "used", 
+              ",", "physEdges", ",", "rngE", ",", "ggE", ",", "mstE", ",", 
+              "physPairs", ",", "rngPairs", ",", "ggPairs", ",", "mstPairs", ",",
+               "physLen", ",", "physDen", ",", "rngLen", ",", "rngDen", ",", 
+              "ggLen", ",", "ggDen", ",", "mstLen", ",", "mstDen", ",", 
+              "physEdgesN", ",", "rngEdgesN", ",", "ggEdgesN", ",", 
+              "mstEdgesN", ",", "nVertices", ",", "avgEdgesReal", ",", 
+              "avgEdgesInt", ",", "avgDen", ",", "showSelNow", ",", 
+              "selMatCol", ",", "selMat", ",", "selPairs", ",", "selLabel", ",",
+               "physAvgDeg", ",", "rngAvgDeg", ",", "ggAvgDeg", ",", 
+              "mstAvgDeg", ",", "cyclesFromPairs", ",", "physCycles", ",", 
+              "rngCycles", ",", "ggCycles", ",", "mstCycles", ",", 
+              "physRelCost", ",", "rngRelCost", ",", "ggRelCost", ",", 
+              "physNormLen", ",", "rngNormLen", ",", "ggNormLen", ",", 
+              "mstNormLen", ",", "legendParts"}], "}"}], ",", 
+            RowBox[{
+             RowBox[{"row", "=", 
+              RowBox[{"safeRowLookup", "[", "expID", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"row", "===", 
+                RowBox[{"Missing", "[", "\"\<NotFound\>\"", "]"}]}], ",", 
+               RowBox[{"Return", "[", 
+                RowBox[{"Style", "[", 
+                 RowBox[{"\"\<run_ID not found\>\"", ",", "14", ",", "Red"}], 
+                 "]"}], "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+             RowBox[{"attr", "=", 
+              RowBox[{"attractantsFromRow", "[", "row", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"attr", "===", 
+                RowBox[{"{", "}"}]}], ",", 
+               RowBox[{"Return", "[", 
+                RowBox[{"Style", "[", 
+                 RowBox[{
+                  
+                  RowBox[{"\"\<Empty '\>\"", "<>", "attractantsColName", 
+                   "<>", "\"\<' data for this run_ID.\>\""}], ",", "14", ",", 
+                  "Red"}], "]"}], "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+             RowBox[{"probMat", "=", 
+              RowBox[{"parseSquareMatrix", "@", 
+               RowBox[{"Lookup", "[", 
+                RowBox[{"row", ",", "probMatrixColName", ",", "\"\<\>\""}], 
+                "]"}]}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"probMat", "===", "$Failed"}], ",", 
+               RowBox[{"Return", "[", 
+                RowBox[{"Style", "[", 
+                 RowBox[{
+                  
+                  RowBox[{"\"\<Cannot parse '\>\"", "<>", "probMatrixColName",
+                    "<>", "\"\<'.\>\""}], ",", "14", ",", "Red"}], "]"}], 
+                "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+             RowBox[{"distMat", "=", 
+              RowBox[{"parseSquareMatrix", "@", 
+               RowBox[{"Lookup", "[", 
+                RowBox[{
+                "row", ",", "distanceMatrixColName", ",", "\"\<\>\""}], 
+                "]"}]}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"If", "[", 
+              RowBox[{
+               RowBox[{"distMat", "===", "$Failed"}], ",", 
+               RowBox[{"Return", "[", 
+                RowBox[{"Style", "[", 
+                 RowBox[{
+                  
+                  RowBox[{"\"\<Cannot parse '\>\"", "<>", 
+                   "distanceMatrixColName", "<>", "\"\<'.\>\""}], ",", "14", ",",
+                   "Red"}], "]"}], "]"}]}], "]"}], ";", "\[IndentingNewLine]", 
+             RowBox[{"used", "=", 
+              RowBox[{"Min", "[", 
+               RowBox[{"Length", "/@", 
+                RowBox[{"{", 
+                 RowBox[{"attr", ",", "probMat", ",", "distMat"}], "}"}]}], 
+               "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"attr", "=", 
+              RowBox[{"Take", "[", 
+               RowBox[{"attr", ",", "used"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"probMat", "=", 
+              RowBox[{"Take", "[", 
+               RowBox[{"probMat", ",", "used", ",", "used"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"distMat", "=", 
+              RowBox[{"Take", "[", 
+               RowBox[{"distMat", ",", "used", ",", "used"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"physEdges", "=", 
+              RowBox[{"edgesFromMatrixProb", "[", 
+               RowBox[{"probMat", ",", "attr", ",", "thr"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"rngE", "=", 
+              RowBox[{"rngEdgesFromDistances", "[", 
+               RowBox[{"distMat", ",", "attr"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"ggE", "=", 
+              RowBox[{"ggEdgesFromDistances", "[", 
+               RowBox[{"distMat", ",", "attr"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"mstE", "=", 
+              RowBox[{"mstEdgesFromAttr", "[", "attr", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"physPairs", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"physEdges", "===", 
+                  RowBox[{"{", "}"}]}], "||", 
+                 RowBox[{"!", 
+                  RowBox[{"ListQ", "[", "physEdges", "]"}]}]}], ",", 
+                RowBox[{"{", "}"}], ",", 
+                RowBox[{"physEdges", "[", 
+                 RowBox[{"[", 
+                  RowBox[{"All", ",", 
+                   RowBox[{"{", 
+                    RowBox[{"1", ",", "2"}], "}"}]}], "]"}], "]"}]}], "]"}]}],
+              ";", "\[IndentingNewLine]", 
+             RowBox[{"rngPairs", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"rngE", "===", 
+                  RowBox[{"{", "}"}]}], "||", 
+                 RowBox[{"!", 
+                  RowBox[{"ListQ", "[", "rngE", "]"}]}]}], ",", 
+                RowBox[{"{", "}"}], ",", "rngE"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"ggPairs", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"ggE", "===", 
+                  RowBox[{"{", "}"}]}], "||", 
+                 RowBox[{"!", 
+                  RowBox[{"ListQ", "[", "ggE", "]"}]}]}], ",", 
+                RowBox[{"{", "}"}], ",", "ggE"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"mstPairs", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{
+                 RowBox[{"mstE", "===", 
+                  RowBox[{"{", "}"}]}], "||", 
+                 RowBox[{"!", 
+                  RowBox[{"ListQ", "[", "mstE", "]"}]}]}], ",", 
+                RowBox[{"{", "}"}], ",", "mstE"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"physLen", ",", "physDen"}], "}"}], "=", 
+              RowBox[{"netMetrics", "[", 
+               RowBox[{"attr", ",", "physPairs"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"rngLen", ",", "rngDen"}], "}"}], "=", 
+              RowBox[{"netMetrics", "[", 
+               RowBox[{"attr", ",", "rngPairs"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"ggLen", ",", "ggDen"}], "}"}], "=", 
+              RowBox[{"netMetrics", "[", 
+               RowBox[{"attr", ",", "ggPairs"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"mstLen", ",", "mstDen"}], "}"}], "=", 
+              RowBox[{"netMetrics", "[", 
+               RowBox[{"attr", ",", "mstPairs"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"physEdgesN", "=", 
+              RowBox[{"Length", "[", "physPairs", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"rngEdgesN", "=", 
+              RowBox[{"Length", "[", "rngPairs", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"ggEdgesN", "=", 
+              RowBox[{"Length", "[", "ggPairs", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"mstEdgesN", "=", 
+              RowBox[{"Length", "[", "mstPairs", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"nVertices", "=", 
+              RowBox[{"Length", "[", "attr", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"avgEdgesReal", ",", "avgDen"}], "}"}], "=", 
+              RowBox[{"avgMetricsFromMatrixCols", "[", 
+               RowBox[{"row", ",", "attr"}], "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"avgEdgesInt", "=", 
+              RowBox[{"Round", "[", "avgEdgesReal", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"showSelNow", "=", 
+              RowBox[{
+               RowBox[{"TrueQ", "[", "showMatrixOverlay", "]"}], "&&", 
+               RowBox[{"matrixPick", "=!=", "0"}], "&&", 
+               RowBox[{"matrixColsFound", "=!=", 
+                RowBox[{"{", "}"}]}]}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"selMatCol", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{"showSelNow", ",", 
+                RowBox[{"\"\<matrix\>\"", "<>", 
+                 RowBox[{"ToString", "[", "matrixPick", "]"}]}], 
+                ",", "\"\<\>\""}], "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"selMat", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{"showSelNow", ",", 
+                RowBox[{"parseSquareMatrix", "@", 
+                 RowBox[{"Lookup", "[", 
+                  RowBox[{"row", ",", "selMatCol", ",", "\"\<\>\""}], "]"}]}],
+                 ",", "$Failed"}], "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"selPairs", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"showSelNow", "&&", 
+                 RowBox[{"selMat", "=!=", "$Failed"}]}], ",", 
+                RowBox[{"edgePairsFromBinaryMat", "[", 
+                 RowBox[{"selMat", ",", "attr"}], "]"}], ",", 
+                RowBox[{"{", "}"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"selLabel", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{"showSelNow", ",", "selMatCol", ",", "\"\<\>\""}], 
+               "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"physAvgDeg", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"nVertices", ">", "0"}], ",", 
+                RowBox[{"N", "[", 
+                 RowBox[{"2", " ", 
+                  RowBox[{"physEdgesN", "/", "nVertices"}]}], "]"}], ",", 
+                "0"}], "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"rngAvgDeg", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"nVertices", ">", "0"}], ",", 
+                RowBox[{"N", "[", 
+                 RowBox[{"2", " ", 
+                  RowBox[{"rngEdgesN", "/", "nVertices"}]}], "]"}], ",", 
+                "0"}], "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"ggAvgDeg", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"nVertices", ">", "0"}], ",", 
+                RowBox[{"N", "[", 
+                 RowBox[{"2", " ", 
+                  RowBox[{"ggEdgesN", "/", "nVertices"}]}], "]"}], ",", "0"}],
+                "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"mstAvgDeg", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"nVertices", ">", "0"}], ",", 
+                RowBox[{"N", "[", 
+                 RowBox[{"2", " ", 
+                  RowBox[{"mstEdgesN", "/", "nVertices"}]}], "]"}], ",", 
+                "0"}], "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{
+              RowBox[{"cyclesFromPairs", "[", "pairs_", "]"}], ":=", 
+              RowBox[{"Module", "[", 
+               RowBox[{
+                RowBox[{"{", "g", "}"}], ",", 
+                RowBox[{"If", "[", 
+                 RowBox[{
+                  RowBox[{
+                   RowBox[{"nVertices", "==", "0"}], "||", 
+                   RowBox[{"pairs", "===", 
+                    RowBox[{"{", "}"}]}]}], ",", "0", ",", 
+                  RowBox[{
+                   RowBox[{"g", "=", 
+                    RowBox[{"Graph", "[", 
+                    RowBox[{"attr", ",", 
+                    RowBox[{"UndirectedEdge", "@@@", "pairs"}]}], "]"}]}], ";",
+                    "\[IndentingNewLine]", 
+                   RowBox[{
+                    RowBox[{"EdgeCount", "[", "g", "]"}], "-", 
+                    RowBox[{"VertexCount", "[", "g", "]"}], "+", 
+                    RowBox[{"Length", "[", 
+                    RowBox[{"ConnectedComponents", "[", "g", "]"}], 
+                    "]"}]}]}]}], "]"}]}], "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"physCycles", "=", 
+              RowBox[{"cyclesFromPairs", "[", "physPairs", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"rngCycles", "=", 
+              RowBox[{"cyclesFromPairs", "[", "rngPairs", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"ggCycles", "=", 
+              RowBox[{"cyclesFromPairs", "[", "ggPairs", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"mstCycles", "=", 
+              RowBox[{"cyclesFromPairs", "[", "mstPairs", "]"}]}], ";", 
+             "\[IndentingNewLine]", 
+             RowBox[{"physRelCost", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"mstLen", ">", "0"}], ",", 
+                RowBox[{
+                 RowBox[{"(", 
+                  RowBox[{"physLen", "-", "mstLen"}], ")"}], "/", "mstLen"}], 
+                ",", "0"}], "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"rngRelCost", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"mstLen", ">", "0"}], ",", 
+                RowBox[{
+                 RowBox[{"(", 
+                  RowBox[{"rngLen", "-", "mstLen"}], ")"}], "/", "mstLen"}], ",",
+                 "0"}], "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"ggRelCost", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"mstLen", ">", "0"}], ",", 
+                RowBox[{
+                 RowBox[{"(", 
+                  RowBox[{"ggLen", "-", "mstLen"}], ")"}], "/", "mstLen"}], ",",
+                 "0"}], "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"physNormLen", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"nVertices", ">", "0"}], ",", 
+                RowBox[{"physLen", "/", "nVertices"}], ",", "0"}], "]"}]}], ";",
+              "\[IndentingNewLine]", 
+             RowBox[{"rngNormLen", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"nVertices", ">", "0"}], ",", 
+                RowBox[{"rngLen", "/", "nVertices"}], ",", "0"}], "]"}]}], ";",
+              "\[IndentingNewLine]", 
+             RowBox[{"ggNormLen", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"nVertices", ">", "0"}], ",", 
+                RowBox[{"ggLen", "/", "nVertices"}], ",", "0"}], "]"}]}], ";",
+              "\[IndentingNewLine]", 
+             RowBox[{"mstNormLen", "=", 
+              RowBox[{"If", "[", 
+               RowBox[{
+                RowBox[{"nVertices", ">", "0"}], ",", 
+                RowBox[{"mstLen", "/", "nVertices"}], ",", "0"}], "]"}]}], ";",
+              "\[IndentingNewLine]", 
+             RowBox[{"legendParts", "=", 
+              RowBox[{"Join", "[", 
+               RowBox[{
+                RowBox[{"If", "[", 
+                 RowBox[{"showRNG", ",", 
+                  RowBox[{"{", 
+                   RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<RNG\>\"", ",", "12", ",", "Bold", ",", 
+                    "Yellow"}], "]"}], ",", "\"\<   \>\""}], "}"}], ",", 
+                  RowBox[{"{", "}"}]}], "]"}], ",", 
+                RowBox[{"If", "[", 
+                 RowBox[{"showGG", ",", 
+                  RowBox[{"{", 
+                   RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<GG\>\"", ",", "12", ",", "Bold", ",", 
+                    "Pink"}], "]"}], ",", "\"\<   \>\""}], "}"}], ",", 
+                  RowBox[{"{", "}"}]}], "]"}], ",", 
+                RowBox[{"If", "[", 
+                 RowBox[{"showMST", ",", 
+                  RowBox[{"{", 
+                   RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<MST\>\"", ",", "12", ",", "Bold", ",", 
+                    "Green"}], "]"}], ",", "\"\<   \>\""}], "}"}], ",", 
+                  RowBox[{"{", "}"}]}], "]"}], ",", 
+                RowBox[{"If", "[", 
+                 RowBox[{"showSelNow", ",", 
+                  RowBox[{"{", 
+                   RowBox[{
+                    RowBox[{"Style", "[", 
+                    RowBox[{"selLabel", ",", "12", ",", "Bold", ",", "Blue"}],
+                     "]"}], ",", "\"\<   \>\""}], "}"}], ",", 
+                  RowBox[{"{", "}"}]}], "]"}], ",", 
+                RowBox[{"{", 
+                 RowBox[{"Style", "[", 
+                  
+                  RowBox[{"\"\<Physarum (Probability adjacency matrix)\>\"", ",",
+                    "12", ",", "Bold", ",", "Black"}], "]"}], "}"}]}], 
+               "]"}]}], ";", "\[IndentingNewLine]", 
+             RowBox[{"Column", "[", 
+              RowBox[{
+               RowBox[{"{", 
+                RowBox[{
+                 RowBox[{"Style", "[", 
+                  RowBox[{
+                   RowBox[{"\"\<run_ID: \>\"", "<>", 
+                    RowBox[{"ToString", "[", "expID", "]"}], 
+                    "<>", "\"\< | threshold P_edge \[GreaterEqual] \>\"", "<>", 
+                    RowBox[{"ToString", "@", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"thr", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}]}], 
+                    "<>", "\"\< | points used: \>\"", "<>", 
+                    RowBox[{"ToString", "[", "used", "]"}]}], ",", "14", ",", 
+                   "Bold"}], "]"}], ",", 
+                 RowBox[{"Row", "[", "legendParts", "]"}], ",", 
+                 RowBox[{"overlayPlot", "[", 
+                  RowBox[{
+                  "attr", ",", "physEdges", ",", "rngE", ",", "ggE", ",", 
+                   "mstE", ",", "selPairs", ",", "numOpacity", ",", "showRNG",
+                    ",", "showGG", ",", "showMST", ",", "showSelNow"}], "]"}],
+                  ",", 
+                 RowBox[{"Column", "[", 
+                  RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<Lengths (cm), densities, edge counts:\>\"", ",",
+                     "12", ",", "Bold"}], "]"}], ",", 
+                    RowBox[{"Row", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    RowBox[{"\"\<Physarum: \>\"", ",", "12", ",", "Bold"}], 
+                    "]"}], ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"physLen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< cm   | density: \>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"physDen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "3"}], "}"}]}], "]"}], 
+                    ",", "\"\< | edges: \>\"", ",", "physEdgesN"}], "}"}], 
+                    "]"}], ",", 
+                    RowBox[{"Row", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    RowBox[{"\"\<RNG: \>\"", ",", "12", ",", "Bold"}], "]"}], 
+                    ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"rngLen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< cm   | density: \>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"rngDen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "3"}], "}"}]}], "]"}], 
+                    ",", "\"\< | edges: \>\"", ",", "rngEdgesN"}], "}"}], 
+                    "]"}], ",", 
+                    RowBox[{"Row", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    RowBox[{"\"\<GG: \>\"", ",", "12", ",", "Bold"}], "]"}], ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"ggLen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< cm   | density: \>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"ggDen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "3"}], "}"}]}], "]"}], 
+                    ",", "\"\< | edges: \>\"", ",", "ggEdgesN"}], "}"}], 
+                    "]"}], ",", 
+                    RowBox[{"Row", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    RowBox[{"\"\<MST: \>\"", ",", "12", ",", "Bold"}], "]"}], 
+                    ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"mstLen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< cm   | density: \>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"mstDen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "3"}], "}"}]}], "]"}], 
+                    ",", "\"\< | edges: \>\"", ",", "mstEdgesN"}], "}"}], 
+                    "]"}], ",", 
+                    RowBox[{"Row", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<AVG(matrix1..matrixN): \>\"", ",", "12", ",",
+                     "Bold"}], "]"}], ",", "\"\<mean density: \>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"avgDen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "3"}], "}"}]}], "]"}], 
+                    ",", "\"\< | mean edges: \>\"", ",", "avgEdgesInt"}], 
+                    "}"}], "]"}]}], "}"}], ",", 
+                   RowBox[{"Spacings", "->", "0.30"}]}], "]"}], ",", 
+                 RowBox[{"Column", "[", 
+                  RowBox[{
+                   RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    
+                    RowBox[{"\"\<Engineering metrics:\>\"", ",", "12", ",", 
+                    "Bold"}], "]"}], ",", 
+                    RowBox[{"Row", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    RowBox[{"\"\<Physarum: \>\"", ",", "12", ",", "Bold"}], 
+                    "]"}], ",", "\"\<avg degree=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"physAvgDeg", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< | cycles=\>\"", ",", "physCycles", 
+                    ",", "\"\< | compactness=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"physNormLen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< | cost=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"physRelCost", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}]}], "}"}], 
+                    "]"}], ",", 
+                    RowBox[{"Row", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    RowBox[{"\"\<RNG: \>\"", ",", "12", ",", "Bold"}], "]"}], 
+                    ",", "\"\<avg degree=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"rngAvgDeg", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< | cycles=\>\"", ",", "rngCycles", 
+                    ",", "\"\< | compactness=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"rngNormLen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< | cost=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"rngRelCost", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}]}], "}"}], 
+                    "]"}], ",", 
+                    RowBox[{"Row", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    RowBox[{"\"\<GG: \>\"", ",", "12", ",", "Bold"}], "]"}], 
+                    ",", "\"\<avg degree=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"ggAvgDeg", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< | cycles=\>\"", ",", "ggCycles", 
+                    ",", "\"\< | compactness=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"ggNormLen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< | cost=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"ggRelCost", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}]}], "}"}], 
+                    "]"}], ",", 
+                    RowBox[{"Row", "[", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Style", "[", 
+                    RowBox[{"\"\<MST: \>\"", ",", "12", ",", "Bold"}], "]"}], 
+                    ",", "\"\<avg degree=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"mstAvgDeg", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}], 
+                    ",", "\"\< | cycles=\>\"", ",", "mstCycles", 
+                    ",", "\"\< | compactness=\>\"", ",", 
+                    RowBox[{"NumberForm", "[", 
+                    RowBox[{"mstNormLen", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"Infinity", ",", "2"}], "}"}]}], "]"}]}], "}"}], 
+                    "]"}]}], "}"}], ",", 
+                   RowBox[{"Spacings", "->", "0.25"}]}], "]"}]}], "}"}], ",", 
+               RowBox[{"Spacings", "->", "0.9"}]}], "]"}]}]}], "]"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"expID", ",", 
+              RowBox[{"First", "[", "ids", "]"}], ",", "\"\<run_ID\>\""}], 
+             "}"}], ",", "ids", ",", 
+            RowBox[{"ControlType", "->", "PopupMenu"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+             "thr", ",", "0.5", 
+              ",", "\"\<Probability threshold (P_edge \[GreaterEqual])\>\""}],
+              "}"}], ",", "0", ",", "1", ",", "0.01", ",", 
+            RowBox[{"ControlType", "->", "Slider"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+             "numOpacity", ",", "0.25", 
+              ",", "\"\<Opacity of cell numbers\>\""}], "}"}], ",", "0.05", ",",
+             "1", ",", "0.05", ",", 
+            RowBox[{"ControlType", "->", "Slider"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"showRNG", ",", "True", ",", "\"\<Show RNG\>\""}], "}"}],
+             ",", 
+            RowBox[{"{", 
+             RowBox[{"True", ",", "False"}], "}"}], ",", 
+            RowBox[{"ControlType", "->", "Checkbox"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"showGG", ",", "True", ",", "\"\<Show GG\>\""}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"True", ",", "False"}], "}"}], ",", 
+            RowBox[{"ControlType", "->", "Checkbox"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"showMST", ",", "True", ",", "\"\<Show MST\>\""}], "}"}],
+             ",", 
+            RowBox[{"{", 
+             RowBox[{"True", ",", "False"}], "}"}], ",", 
+            RowBox[{"ControlType", "->", "Checkbox"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+             "showMatrixOverlay", ",", "False", 
+              ",", "\"\<Show matrix overlay (blue)\>\""}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"True", ",", "False"}], "}"}], ",", 
+            RowBox[{"ControlType", "->", "Checkbox"}]}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{"matrixPick", ",", "1", ",", "\"\<Which matrix\>\""}], 
+             "}"}], ",", 
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{"matrixColsFound", "===", 
+               RowBox[{"{", "}"}]}], ",", 
+              RowBox[{"{", 
+               RowBox[{"1", "->", "\"\<No matrices\>\""}], "}"}], ",", 
+              RowBox[{"Thread", "[", 
+               RowBox[{
+                RowBox[{"(", 
+                 RowBox[{"ToExpression", "@", 
+                  RowBox[{"StringReplace", "[", 
+                   RowBox[{"matrixColsFound", ",", 
+                    RowBox[{"\"\<matrix\>\"", "->", "\"\<\>\""}]}], "]"}]}], 
+                 ")"}], "->", 
+                RowBox[{"(", 
+                 RowBox[{"StringReplace", "[", 
+                  RowBox[{"matrixColsFound", ",", 
+                   RowBox[{"\"\<matrix\>\"", "->", "\"\<\>\""}]}], "]"}], 
+                 ")"}]}], "]"}]}], "]"}], ",", 
+            RowBox[{"ControlType", "->", "PopupMenu"}]}], "}"}], ",", 
+          RowBox[{"TrackedSymbols", ":>", 
+           RowBox[{"{", 
+            RowBox[{
+            "expID", ",", "thr", ",", "numOpacity", ",", "showRNG", ",", 
+             "showGG", ",", "showMST", ",", "showMatrixOverlay", ",", 
+             "matrixPick"}], "}"}]}]}], "]"}]}]}], "]"}]}], ";"}], "\n", 
+   "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{"--", 
+     RowBox[{"--", 
+      RowBox[{"--", 
+       RowBox[{"--", 
+        RowBox[{"--", 
+         RowBox[{
+          RowBox[{
+           RowBox[{
+            RowBox[{
+             RowBox[{"RUN", "--"}], "--"}], "--"}], "--"}], "--"}]}]}]}]}]}], 
+    "*)"}], "\[IndentingNewLine]", 
+   RowBox[{"viewer", "[", "]"}], "\n", "\n"}]}]], "Input",
+ CellChangeTimes->{{3.977284208985567*^9, 3.977284208985567*^9}, 
+   3.9784984291179867`*^9, 3.9784986937763767`*^9, {3.9786612951018257`*^9, 
+   3.9786612975973167`*^9}},
+ CellLabel->"In[51]:=",ExpressionUUID->"eae5bda8-cdba-c644-a4de-bf61eaa6acab"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Detected matrix columns (from adjacency_long.csv): \"\>", "\[InvisibleSpace]", 
+   RowBox[{"{", 
+    RowBox[{"\<\"matrix1\"\>", ",", "\<\"matrix2\"\>", ",", "\<\"matrix3\"\>",
+      ",", "\<\"matrix4\"\>", ",", "\<\"matrix5\"\>", ",", "\<\"matrix6\"\>", 
+     ",", "\<\"matrix7\"\>", ",", "\<\"matrix8\"\>", ",", "\<\"matrix9\"\>", 
+     ",", "\<\"matrix10\"\>", ",", "\<\"matrix11\"\>", 
+     ",", "\<\"matrix12\"\>", ",", "\<\"matrix13\"\>", 
+     ",", "\<\"matrix14\"\>", ",", "\<\"matrix15\"\>", 
+     ",", "\<\"matrix16\"\>", ",", "\<\"matrix17\"\>", 
+     ",", "\<\"matrix18\"\>"}], "}"}]}],
+  SequenceForm[
+  "Detected matrix columns (from adjacency_long.csv): ", {
+   "matrix1", "matrix2", "matrix3", "matrix4", "matrix5", "matrix6", 
+    "matrix7", "matrix8", "matrix9", "matrix10", "matrix11", "matrix12", 
+    "matrix13", "matrix14", "matrix15", "matrix16", "matrix17", "matrix18"}],
+  Editable->False]], "Print",
+ CellChangeTimes->{
+  3.978498698109068*^9, 3.978503310271261*^9, 3.978650053470646*^9, 
+   3.978653460198324*^9, {3.9786613069464836`*^9, 3.9786613127259846`*^9}},
+ CellLabel->
+  "During evaluation of \
+In[51]:=",ExpressionUUID->"4fba232c-f88e-3541-a8d2-7048e62881b1"],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`expID$$ = 501, $CellContext`matrixPick$$ = 
+    1, $CellContext`numOpacity$$ = 0.25, $CellContext`showGG$$ = 
+    False, $CellContext`showMatrixOverlay$$ = False, $CellContext`showMST$$ = 
+    False, $CellContext`showRNG$$ = False, $CellContext`thr$$ = 0.5, 
+    Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
+    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
+    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{{
+       Hold[$CellContext`expID$$], 501, "run_ID"}, {501, 502, 503, 601, 602, 
+      603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614, 615, 616, 
+      701, 702, 703, 704, 705, 706, 707, 709, 710, 712, 713}, ControlType -> 
+      PopupMenu}, {{
+       Hold[$CellContext`thr$$], 0.5, 
+       "Probability threshold (P_edge \[GreaterEqual])"}, 0, 1, 0.01, 
+      ControlType -> Slider}, {{
+       Hold[$CellContext`numOpacity$$], 0.25, "Opacity of cell numbers"}, 
+      0.05, 1, 0.05, ControlType -> Slider}, {{
+       Hold[$CellContext`showRNG$$], True, "Show RNG"}, {True, False}, 
+      ControlType -> Checkbox}, {{
+       Hold[$CellContext`showGG$$], True, "Show GG"}, {True, False}, 
+      ControlType -> Checkbox}, {{
+       Hold[$CellContext`showMST$$], True, "Show MST"}, {True, False}, 
+      ControlType -> Checkbox}, {{
+       Hold[$CellContext`showMatrixOverlay$$], False, 
+       "Show matrix overlay (blue)"}, {True, False}, ControlType -> 
+      Checkbox}, {{
+       Hold[$CellContext`matrixPick$$], 1, "Which matrix"}, {
+      1 -> "1", 2 -> "2", 3 -> "3", 4 -> "4", 5 -> "5", 6 -> "6", 7 -> "7", 8 -> 
+       "8", 9 -> "9", 10 -> "10", 11 -> "11", 12 -> "12", 13 -> "13", 14 -> 
+       "14", 15 -> "15", 16 -> "16", 17 -> "17", 18 -> "18"}, ControlType -> 
+      PopupMenu}}, Typeset`size$$ = {
+    700., {463.3206565341447, 469.05259033814076`}}, Typeset`update$$ = 0, 
+    Typeset`initDone$$, Typeset`skipInitDone$$ = True, 
+    Typeset`keyframeActionsQ$$ = False, Typeset`keyframeList$$ = {}}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, 
+      "Variables" :> {$CellContext`expID$$ = 501, $CellContext`matrixPick$$ = 
+        1, $CellContext`numOpacity$$ = 0.25, $CellContext`showGG$$ = 
+        True, $CellContext`showMatrixOverlay$$ = 
+        False, $CellContext`showMST$$ = True, $CellContext`showRNG$$ = 
+        True, $CellContext`thr$$ = 0.5}, "ControllerVariables" :> {}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$, Typeset`keyframeActionsQ$$, 
+        Typeset`keyframeList$$}, "Body" :> 
+      Module[{$CellContext`row$, $CellContext`attr$, $CellContext`probMat$, \
+$CellContext`distMat$, $CellContext`used$, $CellContext`physEdges$, \
+$CellContext`rngE$, $CellContext`ggE$, $CellContext`mstE$, \
+$CellContext`physPairs$, $CellContext`rngPairs$, $CellContext`ggPairs$, \
+$CellContext`mstPairs$, $CellContext`physLen$, $CellContext`physDen$, \
+$CellContext`rngLen$, $CellContext`rngDen$, $CellContext`ggLen$, \
+$CellContext`ggDen$, $CellContext`mstLen$, $CellContext`mstDen$, \
+$CellContext`physEdgesN$, $CellContext`rngEdgesN$, $CellContext`ggEdgesN$, \
+$CellContext`mstEdgesN$, $CellContext`nVertices$, $CellContext`avgEdgesReal$, \
+$CellContext`avgEdgesInt$, $CellContext`avgDen$, $CellContext`showSelNow$, \
+$CellContext`selMatCol$, $CellContext`selMat$, $CellContext`selPairs$, \
+$CellContext`selLabel$, $CellContext`physAvgDeg$, $CellContext`rngAvgDeg$, \
+$CellContext`ggAvgDeg$, $CellContext`mstAvgDeg$, \
+$CellContext`cyclesFromPairs$, $CellContext`physCycles$, \
+$CellContext`rngCycles$, $CellContext`ggCycles$, $CellContext`mstCycles$, \
+$CellContext`physRelCost$, $CellContext`rngRelCost$, $CellContext`ggRelCost$, \
+$CellContext`physNormLen$, $CellContext`rngNormLen$, $CellContext`ggNormLen$, \
+$CellContext`mstNormLen$, $CellContext`legendParts$}, $CellContext`row$ = \
+$CellContext`safeRowLookup[$CellContext`expID$$]; 
+        If[$CellContext`row$ === Missing["NotFound"], 
+          Return[
+           Style[
+           "run_ID not found", 14, 
+            Red]]]; $CellContext`attr$ = \
+$CellContext`attractantsFromRow[$CellContext`row$]; 
+        If[$CellContext`attr$ === {}, 
+          Return[
+           Style[
+           "Empty '" <> $CellContext`attractantsColName <> 
+            "' data for this run_ID.", 14, 
+            Red]]]; $CellContext`probMat$ = $CellContext`parseSquareMatrix[
+           Lookup[$CellContext`row$, $CellContext`probMatrixColName, ""]]; 
+        If[$CellContext`probMat$ === $Failed, 
+          Return[
+           Style[
+           "Cannot parse '" <> $CellContext`probMatrixColName <> "'.", 14, 
+            Red]]]; $CellContext`distMat$ = $CellContext`parseSquareMatrix[
+           Lookup[$CellContext`row$, $CellContext`distanceMatrixColName, ""]]; 
+        If[$CellContext`distMat$ === $Failed, 
+          Return[
+           Style[
+           "Cannot parse '" <> $CellContext`distanceMatrixColName <> "'.", 14,
+             Red]]]; $CellContext`used$ = Min[
+           Map[
+           Length, {$CellContext`attr$, $CellContext`probMat$, \
+$CellContext`distMat$}]]; $CellContext`attr$ = 
+         Take[$CellContext`attr$, $CellContext`used$]; $CellContext`probMat$ = 
+         Take[$CellContext`probMat$, $CellContext`used$, $CellContext`used$]; \
+$CellContext`distMat$ = 
+         Take[$CellContext`distMat$, $CellContext`used$, $CellContext`used$]; \
+$CellContext`physEdges$ = \
+$CellContext`edgesFromMatrixProb[$CellContext`probMat$, $CellContext`attr$, \
+$CellContext`thr$$]; $CellContext`rngE$ = \
+$CellContext`rngEdgesFromDistances[$CellContext`distMat$, $CellContext`attr$]; \
+$CellContext`ggE$ = $CellContext`ggEdgesFromDistances[$CellContext`distMat$, \
+$CellContext`attr$]; $CellContext`mstE$ = \
+$CellContext`mstEdgesFromAttr[$CellContext`attr$]; $CellContext`physPairs$ = 
+         If[
+           Or[$CellContext`physEdges$ === {}, 
+            Not[
+             ListQ[$CellContext`physEdges$]]], {}, 
+           
+           Part[$CellContext`physEdges$, All, {1, 
+            2}]]; $CellContext`rngPairs$ = If[
+           Or[$CellContext`rngE$ === {}, 
+            Not[
+             
+             ListQ[$CellContext`rngE$]]], {}, $CellContext`rngE$]; \
+$CellContext`ggPairs$ = If[
+           Or[$CellContext`ggE$ === {}, 
+            Not[
+             
+             ListQ[$CellContext`ggE$]]], {}, $CellContext`ggE$]; \
+$CellContext`mstPairs$ = If[
+           Or[$CellContext`mstE$ === {}, 
+            Not[
+             
+             ListQ[$CellContext`mstE$]]], {}, $CellContext`mstE$]; \
+{$CellContext`physLen$, $CellContext`physDen$} = \
+$CellContext`netMetrics[$CellContext`attr$, $CellContext`physPairs$]; \
+{$CellContext`rngLen$, $CellContext`rngDen$} = \
+$CellContext`netMetrics[$CellContext`attr$, $CellContext`rngPairs$]; \
+{$CellContext`ggLen$, $CellContext`ggDen$} = \
+$CellContext`netMetrics[$CellContext`attr$, $CellContext`ggPairs$]; \
+{$CellContext`mstLen$, $CellContext`mstDen$} = \
+$CellContext`netMetrics[$CellContext`attr$, $CellContext`mstPairs$]; \
+$CellContext`physEdgesN$ = 
+         Length[$CellContext`physPairs$]; $CellContext`rngEdgesN$ = 
+         Length[$CellContext`rngPairs$]; $CellContext`ggEdgesN$ = 
+         Length[$CellContext`ggPairs$]; $CellContext`mstEdgesN$ = 
+         Length[$CellContext`mstPairs$]; $CellContext`nVertices$ = 
+         Length[$CellContext`attr$]; {$CellContext`avgEdgesReal$, \
+$CellContext`avgDen$} = \
+$CellContext`avgMetricsFromMatrixCols[$CellContext`row$, $CellContext`attr$]; \
+$CellContext`avgEdgesInt$ = 
+         Round[$CellContext`avgEdgesReal$]; $CellContext`showSelNow$ = And[
+           TrueQ[$CellContext`showMatrixOverlay$$], $CellContext`matrixPick$$ =!= 
+           0, $CellContext`matrixColsFound =!= {}]; $CellContext`selMatCol$ = 
+         If[$CellContext`showSelNow$, "matrix" <> 
+           ToString[$CellContext`matrixPick$$], ""]; $CellContext`selMat$ = 
+         If[$CellContext`showSelNow$, 
+           $CellContext`parseSquareMatrix[
+            
+            Lookup[$CellContext`row$, $CellContext`selMatCol$, 
+             ""]], $Failed]; $CellContext`selPairs$ = If[
+           And[$CellContext`showSelNow$, $CellContext`selMat$ =!= $Failed], 
+           $CellContext`edgePairsFromBinaryMat[$CellContext`selMat$, \
+$CellContext`attr$], {}]; $CellContext`selLabel$ = 
+         If[$CellContext`showSelNow$, $CellContext`selMatCol$, 
+           ""]; $CellContext`physAvgDeg$ = If[$CellContext`nVertices$ > 0, 
+           N[2 ($CellContext`physEdgesN$/$CellContext`nVertices$)], 
+           0]; $CellContext`rngAvgDeg$ = If[$CellContext`nVertices$ > 0, 
+           N[2 ($CellContext`rngEdgesN$/$CellContext`nVertices$)], 
+           0]; $CellContext`ggAvgDeg$ = If[$CellContext`nVertices$ > 0, 
+           N[2 ($CellContext`ggEdgesN$/$CellContext`nVertices$)], 
+           0]; $CellContext`mstAvgDeg$ = If[$CellContext`nVertices$ > 0, 
+           N[2 ($CellContext`mstEdgesN$/$CellContext`nVertices$)], 
+           0]; $CellContext`cyclesFromPairs$[
+           Pattern[$CellContext`pairs$, 
+            Blank[]]] := Module[{$CellContext`g$}, 
+           If[
+            Or[$CellContext`nVertices$ == 0, $CellContext`pairs$ === {}], 
+            0, $CellContext`g$ = Graph[$CellContext`attr$, 
+               MapApply[UndirectedEdge, $CellContext`pairs$]]; 
+            EdgeCount[$CellContext`g$] - VertexCount[$CellContext`g$] + Length[
+               
+               ConnectedComponents[$CellContext`g$]]]]; \
+$CellContext`physCycles$ = \
+$CellContext`cyclesFromPairs$[$CellContext`physPairs$]; \
+$CellContext`rngCycles$ = \
+$CellContext`cyclesFromPairs$[$CellContext`rngPairs$]; $CellContext`ggCycles$ = \
+$CellContext`cyclesFromPairs$[$CellContext`ggPairs$]; $CellContext`mstCycles$ = \
+$CellContext`cyclesFromPairs$[$CellContext`mstPairs$]; \
+$CellContext`physRelCost$ = 
+         If[$CellContext`mstLen$ > 
+           0, ($CellContext`physLen$ - \
+$CellContext`mstLen$)/$CellContext`mstLen$, 0]; $CellContext`rngRelCost$ = 
+         If[$CellContext`mstLen$ > 
+           0, ($CellContext`rngLen$ - \
+$CellContext`mstLen$)/$CellContext`mstLen$, 0]; $CellContext`ggRelCost$ = 
+         If[$CellContext`mstLen$ > 
+           0, ($CellContext`ggLen$ - \
+$CellContext`mstLen$)/$CellContext`mstLen$, 0]; $CellContext`physNormLen$ = 
+         If[$CellContext`nVertices$ > 
+           0, $CellContext`physLen$/$CellContext`nVertices$, 
+           0]; $CellContext`rngNormLen$ = 
+         If[$CellContext`nVertices$ > 
+           0, $CellContext`rngLen$/$CellContext`nVertices$, 
+           0]; $CellContext`ggNormLen$ = 
+         If[$CellContext`nVertices$ > 
+           0, $CellContext`ggLen$/$CellContext`nVertices$, 
+           0]; $CellContext`mstNormLen$ = 
+         If[$CellContext`nVertices$ > 
+           0, $CellContext`mstLen$/$CellContext`nVertices$, 
+           0]; $CellContext`legendParts$ = Join[
+           If[$CellContext`showRNG$$, {
+             Style["RNG", 12, Bold, Yellow], "   "}, {}], 
+           If[$CellContext`showGG$$, {
+             Style["GG", 12, Bold, Pink], "   "}, {}], 
+           If[$CellContext`showMST$$, {
+             Style["MST", 12, Bold, Green], "   "}, {}], 
+           If[$CellContext`showSelNow$, {
+             Style[$CellContext`selLabel$, 12, Bold, Blue], "   "}, {}], {
+            Style[
+            "Physarum (Probability adjacency matrix)", 12, Bold, Black]}]; 
+        Column[{
+           Style[
+           "run_ID: " <> ToString[$CellContext`expID$$] <> 
+            " | threshold P_edge \[GreaterEqual] " <> ToString[
+              NumberForm[$CellContext`thr$$, {Infinity, 2}]] <> 
+            " | points used: " <> ToString[$CellContext`used$], 14, Bold], 
+           Row[$CellContext`legendParts$], 
+           $CellContext`overlayPlot[$CellContext`attr$, \
+$CellContext`physEdges$, $CellContext`rngE$, $CellContext`ggE$, \
+$CellContext`mstE$, $CellContext`selPairs$, $CellContext`numOpacity$$, \
+$CellContext`showRNG$$, $CellContext`showGG$$, $CellContext`showMST$$, \
+$CellContext`showSelNow$], 
+           Column[{
+             Style["Lengths (cm), densities, edge counts:", 12, Bold], 
+             Row[{
+               Style["Physarum: ", 12, Bold], 
+               NumberForm[$CellContext`physLen$, {Infinity, 2}], 
+               " cm   | density: ", 
+               NumberForm[$CellContext`physDen$, {Infinity, 3}], 
+               " | edges: ", $CellContext`physEdgesN$}], 
+             Row[{
+               Style["RNG: ", 12, Bold], 
+               NumberForm[$CellContext`rngLen$, {Infinity, 2}], 
+               " cm   | density: ", 
+               NumberForm[$CellContext`rngDen$, {Infinity, 3}], 
+               " | edges: ", $CellContext`rngEdgesN$}], 
+             Row[{
+               Style["GG: ", 12, Bold], 
+               NumberForm[$CellContext`ggLen$, {Infinity, 2}], 
+               " cm   | density: ", 
+               NumberForm[$CellContext`ggDen$, {Infinity, 3}], 
+               " | edges: ", $CellContext`ggEdgesN$}], 
+             Row[{
+               Style["MST: ", 12, Bold], 
+               NumberForm[$CellContext`mstLen$, {Infinity, 2}], 
+               " cm   | density: ", 
+               NumberForm[$CellContext`mstDen$, {Infinity, 3}], 
+               " | edges: ", $CellContext`mstEdgesN$}], 
+             Row[{
+               Style["AVG(matrix1..matrixN): ", 12, Bold], "mean density: ", 
+               NumberForm[$CellContext`avgDen$, {Infinity, 3}], 
+               " | mean edges: ", $CellContext`avgEdgesInt$}]}, Spacings -> 
+            0.3], 
+           Column[{
+             Style["Engineering metrics:", 12, Bold], 
+             Row[{
+               Style["Physarum: ", 12, Bold], "avg degree=", 
+               NumberForm[$CellContext`physAvgDeg$, {Infinity, 2}], 
+               " | cycles=", $CellContext`physCycles$, " | compactness=", 
+               NumberForm[$CellContext`physNormLen$, {Infinity, 2}], 
+               " | cost=", 
+               NumberForm[$CellContext`physRelCost$, {Infinity, 2}]}], 
+             Row[{
+               Style["RNG: ", 12, Bold], "avg degree=", 
+               NumberForm[$CellContext`rngAvgDeg$, {Infinity, 2}], 
+               " | cycles=", $CellContext`rngCycles$, " | compactness=", 
+               NumberForm[$CellContext`rngNormLen$, {Infinity, 2}], 
+               " | cost=", 
+               NumberForm[$CellContext`rngRelCost$, {Infinity, 2}]}], 
+             Row[{
+               Style["GG: ", 12, Bold], "avg degree=", 
+               NumberForm[$CellContext`ggAvgDeg$, {Infinity, 2}], 
+               " | cycles=", $CellContext`ggCycles$, " | compactness=", 
+               NumberForm[$CellContext`ggNormLen$, {Infinity, 2}], " | cost=", 
+               NumberForm[$CellContext`ggRelCost$, {Infinity, 2}]}], 
+             Row[{
+               Style["MST: ", 12, Bold], "avg degree=", 
+               NumberForm[$CellContext`mstAvgDeg$, {Infinity, 2}], 
+               " | cycles=", $CellContext`mstCycles$, " | compactness=", 
+               NumberForm[$CellContext`mstNormLen$, {Infinity, 2}]}]}, 
+            Spacings -> 0.25]}, Spacings -> 0.9]], 
+      "Specifications" :> {{{$CellContext`expID$$, 501, "run_ID"}, {501, 502, 
+         503, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613,
+          614, 615, 616, 701, 702, 703, 704, 705, 706, 707, 709, 710, 712, 
+         713}, ControlType -> 
+         PopupMenu}, {{$CellContext`thr$$, 0.5, 
+          "Probability threshold (P_edge \[GreaterEqual])"}, 0, 1, 0.01, 
+         ControlType -> 
+         Slider}, {{$CellContext`numOpacity$$, 0.25, 
+          "Opacity of cell numbers"}, 0.05, 1, 0.05, ControlType -> 
+         Slider}, {{$CellContext`showRNG$$, True, "Show RNG"}, {True, False}, 
+         ControlType -> 
+         Checkbox}, {{$CellContext`showGG$$, True, "Show GG"}, {True, False}, 
+         ControlType -> 
+         Checkbox}, {{$CellContext`showMST$$, True, "Show MST"}, {
+         True, False}, ControlType -> 
+         Checkbox}, {{$CellContext`showMatrixOverlay$$, False, 
+          "Show matrix overlay (blue)"}, {True, False}, ControlType -> 
+         Checkbox}, {{$CellContext`matrixPick$$, 1, "Which matrix"}, {
+         1 -> "1", 2 -> "2", 3 -> "3", 4 -> "4", 5 -> "5", 6 -> "6", 7 -> "7",
+           8 -> "8", 9 -> "9", 10 -> "10", 11 -> "11", 12 -> "12", 13 -> "13",
+           14 -> "14", 15 -> "15", 16 -> "16", 17 -> "17", 18 -> "18"}, 
+         ControlType -> PopupMenu}}, 
+      "Options" :> {
+       TrackedSymbols :> {$CellContext`expID$$, $CellContext`thr$$, \
+$CellContext`numOpacity$$, $CellContext`showRNG$$, $CellContext`showGG$$, \
+$CellContext`showMST$$, $CellContext`showMatrixOverlay$$, \
+$CellContext`matrixPick$$}}, "DefaultOptions" :> {}],
+     ImageSizeCache->{
+      1065.4870327997207`, {492.5314963778947, 498.2634301818908}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{{3.9772842122946453`*^9, 3.977284225488701*^9}, 
+   3.9772842653988037`*^9, {3.977284319497116*^9, 3.977284341144186*^9}, {
+   3.9779556684122066`*^9, 3.9779557420256386`*^9}, {3.977955788935793*^9, 
+   3.977955797325918*^9}, 3.9781347509963512`*^9, 3.9784986981639233`*^9, {
+   3.9784987303555107`*^9, 3.978498769249241*^9}, {3.978503310322094*^9, 
+   3.978503371380745*^9}, {3.9786500536356487`*^9, 3.9786500571333904`*^9}, {
+   3.978650995406542*^9, 3.9786510323250313`*^9}, {3.9786534602435513`*^9, 
+   3.9786534717382812`*^9}, {3.978661307111828*^9, 3.978661317336628*^9}},
+ CellLabel->
+  "Out[100]=",ExpressionUUID->"2e5fca9f-1f93-9b47-9b72-16b04f893bb9"]
+}, Open  ]]
+},
+WindowSize->{1428, 735.75},
+WindowMargins->{{-2.25, Automatic}, {Automatic, 0}},
+FrontEndVersion->"14.2 for Microsoft Windows (64-bit) (March 14, 2025)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"b9534eef-cc31-2a45-b66a-0e8176009dad"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[576, 22, 92647, 2273, 8018, "Input",ExpressionUUID->"eae5bda8-cdba-c644-a4de-bf61eaa6acab"],
+Cell[93226, 2297, 1243, 23, 39, "Print",ExpressionUUID->"4fba232c-f88e-3541-a8d2-7048e62881b1"],
+Cell[94472, 2322, 18044, 333, 1007, "Output",ExpressionUUID->"2e5fca9f-1f93-9b47-9b72-16b04f893bb9"]
+}, Open  ]]
+}
+]
+*)
+
