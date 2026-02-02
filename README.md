@@ -93,7 +93,7 @@ The MVP focuses on demonstrating core principles and does not require deployment
 ---
 
 ## Data Access
-The experimental dataset is hosted externally on **Zenodo**.
+The experimental dataset is hosted externally on **Zenodo**. https://doi.org/10.5281/zenodo.18411398
 
 - Data type: graphs, adjacency matrices, probability matrices, distance matrices  
 - Access: external download (not stored in this repository)
