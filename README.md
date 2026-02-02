@@ -1,82 +1,121 @@
-# PhysarumAI
+# PhysarumAI  
+Data-driven AI for adaptive network design
 
-PhysarumAI is a research project studying how the slime mould *Physarum polycephalum* forms transport networks and whether this process follows **probabilistic rules** rather than strict determinism or pure randomness.
+## Overview
+PhysarumAI is an AI-based system for designing and analyzing adaptive transport and infrastructure networks.  
+The project combines large-scale experimental data with machine learning to model how efficient and resilient networks emerge under uncertainty.
 
-The repository contains example experimental data, Wolfram Mathematica notebooks, and sample images used to analyse repeated experiments and construct **General (Probability) Matrices** of network connections.
-
-Network structures are analysed using graph-theoretical methods and compared with classical geometric graphs (MST, RNG, GG).  
-The long-term goal is to train an AI model that learns network formation principles directly from biological data.
-
-**Author:** Timur Sakiev
-
-
-## Repository contents
-
-- `example_data_set.xlsx` — example dataset (experiment IDs, attractant positions, adjacency matrices, General matrices, distance matrices, etc.).
-- `PROBABILITY.nb` — Wolfram Mathematica notebook for constructing and analysing **General / Probability Matrices**, edge frequencies, thresholds, and distributions.
-- `MVP-7.nb` — Wolfram Mathematica notebook with the main visualisation / analysis pipeline (graphs, overlays, metrics, threshold filtering).
-- `703_1 copy.jpg`, `703_1 copy.png` — example images from an experiment (photo / processed image).
-- `организация_экспериментов.pdf` — protocol and organisation notes for experiments (Russian).
+Unlike classical optimization approaches that produce a single deterministic solution, PhysarumAI operates with probabilistic network structures, allowing the analysis of stability, redundancy, and alternative pathways.
 
 ---
 
-## Project idea (short)
+## Problem
+Many real-world infrastructure and transport networks must operate under changing conditions, limited resources, and partial failures.  
+Classical engineering and mathematical optimization methods are typically designed for fixed assumptions and often produce fragile solutions that degrade when conditions change.
 
-*Physarum polycephalum* is a living system without a nervous system that still forms efficient networks.  
-**Hypothesis:** network formation is **not strictly deterministic** and **not purely random**, but follows stable **probabilistic patterns** that can be measured across repeated experiments.
-
-To test this, repeated runs with identical attractant configurations are aggregated into a **General (Probability) Matrix**, where edge weights represent how often each connection appears.
-
----
-
-## Workflow (high-level)
-
-1. Define a spatial configuration of attractant points (axial symmetry / radial symmetry / random).
-2. Run repeated experiments under standardised conditions.
-3. Photograph the final network and preprocess images (thresholding → binary).
-4. Extract network connections and store them as adjacency matrices (Matrix 1–Matrix 10).
-5. Sum repeated matrices into a **General Matrix** (edge weight = frequency).
-6. Analyse:
-   - edge-frequency histogram (rare / unstable / stable edges)
-   - node-degree frequency (how often each node connects)
-   - thresholded networks (edges with weight ≥ T)
-   - comparison with reference graphs (MST / RNG / GG)
+At the same time, adaptive network formation in real physical systems is difficult to capture using purely theoretical models. This creates a need for data-driven approaches that learn network formation rules directly from real processes rather than predefined optimization criteria.
 
 ---
 
-## How to use
+## Solution
+PhysarumAI proposes a non-traditional, data-driven approach inspired by experimentally observed network formation in physical systems.
 
-### Option A — Using the example dataset
-1. Download `example_data_set.xlsx`.
-2. Open `PROBABILITY.nb` or `MVP-7.nb` in Wolfram Mathematica.
-3. Update the data import section in the notebook (Excel path or your Google Sheets CSV link).
-4. Run all cells.
+Instead of using abstract simulations or hand-crafted rules, the project is based on a large experimental dataset collected through repeated controlled experiments. These experiments capture how networks form, adapt, and reorganize under identical spatial conditions, producing distributions of possible network structures rather than a single optimal result.
 
-### Option B — Using Google Sheets
-If your notebook is configured for Google Sheets:
-1. Publish the sheet as CSV or use the direct CSV link.
-2. Paste the `sheetID` and `gid` into the notebook variables.
-3. Evaluate the notebook.
-
-> Note: some parts may require adjusting column names depending on your sheet structure.
+Using this dataset, PhysarumAI trains a machine learning model that learns probabilistic rules of network formation and applies them to the generation and analysis of adaptive network topologies.
 
 ---
 
-## Data structure (typical)
+## Experimental Dataset
+At the core of PhysarumAI lies a proprietary experimental dataset collected under controlled laboratory conditions.
 
-For each experiment / configuration the dataset may include:
-- `ru_ID` (experiment ID)
-- attractant coordinates (grid cells)
-- `Matrix 1–Matrix 10` (binary adjacency matrices from repeated runs)
-- `General Matrix` (sum of repeated matrices; edge weights = frequency)
-- distance matrix (pairwise distances between nodes)
+### Data collection pipeline:
+1. **Physical experiments**  
+   Network formation experiments are conducted in Petri dishes with an agar medium.  
+   Each spatial configuration of nodes is repeated 10–18 times to capture variability in network formation.
+
+2. **Image processing**  
+   Network images are processed using ImageJ and converted into standardized binary representations.
+
+3. **Graph construction**  
+   Binary images are transformed into graph representations consisting of nodes and connections.
+
+4. **Adjacency matrices**  
+   For each experimental repeat, an adjacency matrix is generated to represent the presence or absence of connections.
+
+5. **General matrix**  
+   Adjacency matrices from repeated experiments are aggregated into a general matrix representing connection frequencies.
+
+6. **Probability matrix**  
+   The general matrix is normalized to produce a probability matrix indicating how often each connection appears across repetitions.
+
+### Stored dataset information:
+- experiment ID;
+- repeat ID;
+- node coordinates;
+- probability matrices;
+- distance matrices.
+
+This structure allows the model to learn from distributions of network structures rather than single outcomes.
 
 ---
 
-## Requirements
+## AI Model
+The core AI component is a supervised neural network trained on experimental probability matrices.
 
-- Wolfram Mathematica / Wolfram Language (tested on v14.2)
-- (Optional) ImageJ/Fiji for preprocessing and binarisation
+### Model characteristics:
+- **Input:** four numerical features describing relationships between node pairs;
+- **Output:** probability of connection between nodes;
+- **Training target:** experimentally derived connection probabilities;
+- **Purpose:** learning probabilistic rules of adaptive network formation.
+
+The model prioritizes robustness and adaptability over minimal path length or cost.
+
+---
+
+## MVP
+The current MVP is implemented in **Wolfram Mathematica** and runs locally.
+
+It includes two main tools:
+
+### 1. AI-based network generation
+- accepts user-defined node configurations;
+- predicts connection probabilities using the trained model;
+- generates adaptive networks based on a selectable probability threshold.
+
+### 2. Experimental data exploration
+- allows navigation through the experimental dataset;
+- visualizes real networks using probability thresholds;
+- enables comparison between observed and AI-generated structures.
+
+The MVP focuses on demonstrating core principles and does not require deployment or a graphical interface.
+
+---
+
+## Data Access
+The experimental dataset is hosted externally on **Zenodo**.
+
+- Data type: graphs, adjacency matrices, probability matrices, distance matrices  
+- Access: external download (not stored in this repository)
+
+Instructions for dataset usage are provided in `scripts/download_data.py`.
+
+---
+
+## How to Run (Local)
+1. Install **Wolfram Mathematica**.
+2. Download the dataset from Zenodo and place CSV files into the `data/` directory.
+3. Open the provided Wolfram Notebook files.
+4. Execute the notebook cells to load the model and visualize networks.
+
+All computations are performed locally.
+
+---
+
+## Project Status
+PhysarumAI is an experimental AI project focused on adaptive network modeling.  
+Future development directions include model scaling, extended feature sets, and interactive visualization tools.
+
 
 ---
 
